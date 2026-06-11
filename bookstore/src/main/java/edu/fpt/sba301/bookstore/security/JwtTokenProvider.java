@@ -1,6 +1,11 @@
 package edu.fpt.sba301.bookstore.security;
 
+import io.jsonwebtoken.JwtException;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.security.Keys;
 
 import java.security.Key;
 import java.util.Date;
@@ -8,17 +13,20 @@ import java.util.Date;
 @Component
 public class JwtTokenProvider {
 
-    private final String SECRET = "mysecretkeymysecretkeymysecretkey"; // >= 32 ký tự
-    private final long EXPIRATION_TIME = 1000 * 60 * 60; // 1h
+    private final long expirationTime;
+    private final Key key;
 
-    private final Key key = Keys.hmacShaKeyFor(SECRET.getBytes());
+    public JwtTokenProvider(@Value("${spring.jwt.secret}") String secret, @Value("${spring.jwt.expiration}") long expiration) {
+        this.expirationTime = expiration;
+        this.key = Keys.hmacShaKeyFor(secret.getBytes());
+    }
 
     public String generateToken(String username, String role) {
         return Jwts.builder()
                 .setSubject(username)
                 .claim("role", role) // 👈 thêm claim role
                 .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME))
+                .setExpiration(new Date(System.currentTimeMillis() + expirationTime))
                 .signWith(key, SignatureAlgorithm.HS256)
                 .compact();
     }
