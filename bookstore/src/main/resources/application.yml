@@ -2,21 +2,23 @@ spring:
   application:
     name: bookstore
   datasource:
-    url: jdbc:postgresql://localhost:5432/bookstore
+    url: jdbc:postgresql://localhost:5432/bookstoredb
     username: postgres
     password: 12345
     driver-class-name: org.postgresql.Driver
   jpa:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
-      ddl-auto: update
+      ddl-auto: validate
     show-sql: false
     properties:
       hibernate:
         format_sql: true
   flyway:
-    enabled: true
+    enabled: false
     locations: classpath:db/migration
+    baseline-on-migrate: true
+    baseline-version: 1.0
   jwt:
     secret: wahwahwahwahwahwahwahwahwahwahwahwah
     expiration: 3600000 # 1 hour in milliseconds

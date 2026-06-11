@@ -1,31 +1,22 @@
 package edu.fpt.sba301.bookstore.controller;
 
-import edu.fpt.sba301.bookstore.security.JwtTokenProvider;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import edu.fpt.sba301.bookstore.dto.request.LoginRequest;
+import edu.fpt.sba301.bookstore.dto.response.ApiResponse;
+import edu.fpt.sba301.bookstore.service.AuthService;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("api/auth")
+@RequiredArgsConstructor
 public class AuthController {
-
-    @Autowired
-    private UserService userService;
-
-    private final JwtTokenProvider jwtUtil;
-
-    public AuthController(JwtTokenProvider jwtUtil) {
-        this.jwtUtil = jwtUtil;
-    }
+    private final AuthService authService;
 
     @PostMapping("/login")
-    public String login(@RequestParam String username, @RequestParam String password) {
-//        User user = userService.findByUsername(username);
-//        if (user.getUsername().equals(username) && user.getPassword().equals(password)) {
-//            return jwtUtil.generateToken(username, user.getRole().getName());
-//        }
-        return "";
+    public ResponseEntity<ApiResponse<String>> login(@Valid @RequestBody LoginRequest request) {
+        ApiResponse<String> response = new ApiResponse<>();
+        return ResponseEntity.ok(response);
     }
 }
