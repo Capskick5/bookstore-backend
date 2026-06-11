@@ -6,17 +6,6 @@
 *.pem
 secrets/
 
-# ===== FILE RIÊNG TƯ CỦA LEADER (giữ trong máy, KHÔNG đẩy GitHub) =====
-# Mọi ghi chú mentor / liên quan tới việc dùng AI để lập kế hoạch nằm ở đây.
-# Thầy check GitHub sẽ KHÔNG thấy thư mục này.
-_local/
-
-# ===== TÀI LIỆU & BẢN VẼ (đã đưa lên Notion — giữ repo gọn, không commit) =====
-# Nội dung đã chuyển sang Notion. Mở local để xem nhưng không đẩy GitHub.
-plan/
-prototype/
-docs/
-mss301/
 
 # ===== Build / phụ thuộc =====
 node_modules/
@@ -39,5 +28,9 @@ assets/books/
 .vscode/
 *.iml
 
-# ===== Spec do Kiro sinh (giữ trong máy, không cho thầy thấy) =====
-.kiro/
+# ===== Spec riêng =====
+plan
+prototype
+_local
+bookverse-project-docs-all-in-one.zip
+.kiro
