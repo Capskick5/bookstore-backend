@@ -19,11 +19,12 @@ jobs:
           java-version: '21'
           distribution: 'temurin'
           cache: 'maven'
+          cache-dependency-path: bookstore/pom.xml
 
       - name: Check if Maven project exists
         id: check_pom
         run: |
-          if [ -f "pom.xml" ]; then
+          if [ -f "backend/pom.xml" ]; then
             echo "has_pom=true" >> $GITHUB_OUTPUT
           else
             echo "has_pom=false" >> $GITHUB_OUTPUT
@@ -33,3 +34,4 @@ jobs:
       - name: Build and Test with Maven
         if: steps.check_pom.outputs.has_pom == 'true'
         run: mvn -B clean test
+        working-directory: bookstore
