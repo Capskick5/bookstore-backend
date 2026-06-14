@@ -18,10 +18,10 @@ import java.util.List;
 
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
-    private final JwtTokenProvider jwtUtil;
+    private final JwtTokenProvider jwtTokenProvider;
 
-    public JwtAuthenticationFilter(JwtTokenProvider jwtUtil) {
-        this.jwtUtil = jwtUtil;
+    public JwtAuthenticationFilter(JwtTokenProvider jwtTokenProvider) {
+        this.jwtTokenProvider = jwtTokenProvider;
     }
 
     @Override
@@ -34,10 +34,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             String token = authHeader.substring(7);
-            String username = jwtUtil.extractUsername(token);
+            String username = jwtTokenProvider.extractUsername(token);
 
-            if (jwtUtil.validateToken(token)) {
-                String role = jwtUtil.extractRole(token);
+            if (jwtTokenProvider.validateToken(token)) {
+                String role = jwtTokenProvider.extractRole(token);
 
                 // tạo GrantedAuthority từ role
                 List<GrantedAuthority> authorities =

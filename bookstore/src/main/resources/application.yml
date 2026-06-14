@@ -19,6 +19,8 @@ spring:
     locations: classpath:db/migration
     baseline-on-migrate: true
     baseline-version: 1.0
-  jwt:
-    secret: wahwahwahwahwahwahwahwahwahwahwahwah
-    expiration: 3600000 # 1 hour in milliseconds
+
+jwt:
+  secret: wahwahwahwahwahwahwahwahwahwahwahwah
+  expiration: 900000 # 1 hour in milliseconds
+  refresh-expiration: 604800000

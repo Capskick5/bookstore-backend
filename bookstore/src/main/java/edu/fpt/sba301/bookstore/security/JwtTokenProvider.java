@@ -1,5 +1,6 @@
 package edu.fpt.sba301.bookstore.security;
 
+import edu.fpt.sba301.bookstore.config.properties.JwtProperties;
 import io.jsonwebtoken.JwtException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -7,18 +8,18 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
 
+import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.util.Date;
 
 @Component
 public class JwtTokenProvider {
-
-    private final long expirationTime;
+    private final JwtProperties jwtProperties;
     private final Key key;
 
-    public JwtTokenProvider(@Value("${spring.jwt.secret}") String secret, @Value("${spring.jwt.expiration}") long expiration) {
-        this.expirationTime = expiration;
-        this.key = Keys.hmacShaKeyFor(secret.getBytes());
+    public JwtTokenProvider(JwtProperties jwtProperties) {
+        this.jwtProperties = jwtProperties;
+        this.key = Keys.hmacShaKeyFor(jwtProperties.secret().getBytes(StandardCharsets.UTF_8));
     }
 
     public String generateToken(String username, String role) {
@@ -26,7 +27,7 @@ public class JwtTokenProvider {
                 .setSubject(username)
                 .claim("role", role) // 👈 thêm claim role
                 .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + expirationTime))
+                .setExpiration(new Date(System.currentTimeMillis() + jwtProperties.expiration()))
                 .signWith(key, SignatureAlgorithm.HS256)
                 .compact();
     }
@@ -52,5 +53,15 @@ public class JwtTokenProvider {
         } catch (JwtException e) {
             return false;
         }
+    }
+
+    public String generateRefreshToken(String username, String role) {
+        return Jwts.builder()
+                .setSubject(username)
+                .claim("role", role)
+                .setIssuedAt(new Date())
+                .setExpiration(new Date(System.currentTimeMillis() + jwtProperties.refreshExpiration()))
+                .signWith(key, SignatureAlgorithm.HS256)
+                .compact();
     }
 }
