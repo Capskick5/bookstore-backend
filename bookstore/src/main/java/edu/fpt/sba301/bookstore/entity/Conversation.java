@@ -26,6 +26,9 @@ public class Conversation {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
+    @Column(name = "title", length = 255)
+    private String title;
+
     @NotNull
     @ColumnDefault("now()")
     @Column(name = "created_at", nullable = false)
