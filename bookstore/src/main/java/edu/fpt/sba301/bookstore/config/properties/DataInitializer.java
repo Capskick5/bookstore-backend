@@ -19,27 +19,44 @@ public class DataInitializer implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
-        // test user credentials
-        String email = "test@example.com";
-        String rawPassword = "password";
+        // test customer user
+        String customerEmail = "test@example.com";
+        String customerPassword = "password123";
 
-        // only create if not exists
-        if (userRepository.findByEmail(email).isEmpty()) {
+        if (userRepository.findByEmail(customerEmail).isEmpty()) {
             User user = new User();
-            user.setEmail(email);
-            user.setPasswordHash(passwordEncoder.encode(rawPassword));
+            user.setEmail(customerEmail);
+            user.setPasswordHash(passwordEncoder.encode(customerPassword));
             user.setFullName("Test User");
-            // choose a Role present in your enum: ADMIN, CUSTOMER, or STAFF
             user.setRole(Role.CUSTOMER.name());
             user.setEnabled(true);
             user.setPoints(0L);
+            user.setLifetimePoints(0L);
             user.setTier("SILVER");
             user.setCreatedAt(OffsetDateTime.now());
 
             userRepository.save(user);
-            System.out.println("Created test user: " + email + " / " + rawPassword + " (role=" + user.getRole() + ")");
-        } else {
-            System.out.println("Test user already exists: " + email);
+            System.out.println("Created test customer user: " + customerEmail + " / " + customerPassword);
+        }
+
+        // test admin user
+        String adminEmail = "admin@example.com";
+        String adminPassword = "adminpassword123";
+
+        if (userRepository.findByEmail(adminEmail).isEmpty()) {
+            User admin = new User();
+            admin.setEmail(adminEmail);
+            admin.setPasswordHash(passwordEncoder.encode(adminPassword));
+            admin.setFullName("Admin User");
+            admin.setRole(Role.ADMIN.name());
+            admin.setEnabled(true);
+            admin.setPoints(0L);
+            admin.setLifetimePoints(0L);
+            admin.setTier("SILVER");
+            admin.setCreatedAt(OffsetDateTime.now());
+
+            userRepository.save(admin);
+            System.out.println("Created test admin user: " + adminEmail + " / " + adminPassword);
         }
     }
 }
