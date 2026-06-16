@@ -10,13 +10,15 @@ Online bookstore backend with a RAG-powered AI assistant.
 
 ```
 .
-├── src/        # Spring Boot application (Java 21)
+├── bookstore/  # Spring Boot application (Java 21)
 ├── rag/        # Python RAG microservice (FastAPI)
 ├── infra/      # docker-compose (postgres + qdrant + mongo)
-└── pom.xml     # Maven build
+└── docs/       # project documentation
 ```
 
 ## Chạy local
+
+Hướng dẫn chi tiết cho thành viên mới: `docs/SETUP-GUIDE.md`.
 
 ```bash
 # 1. Khởi động database
@@ -26,14 +28,14 @@ docker compose -f infra/docker-compose.yml up -d
 cp .env.example .env   # rồi điền giá trị
 
 # 3. Chạy backend
-mvn spring-boot:run
+cd bookstore && ./mvnw spring-boot:run
 
 # 4. (tùy chọn) chạy RAG service
 cd rag && uv sync && uv run main.py
 ```
 
 - API docs (Swagger): `http://localhost:8080/swagger-ui`
-- Health check: `http://localhost:8080/health`
+- Health check: `http://localhost:8080/api/health`
 
 ## Quy ước nhóm
 

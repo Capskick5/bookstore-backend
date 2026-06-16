@@ -5,7 +5,7 @@
 The Bookstore RAG Platform is an online bookstore with a Retrieval-Augmented Generation (RAG) AI assistant. This design realizes the requirements in `requirements.md` using a **three-service architecture**:
 
 1. **React frontend** — single-page app (separate repository, deployed on Vercel). Shown here only for system context; it is out of scope for this backend repository.
-2. **Spring Boot backend** (this repository) — the main REST API. Owns all relational business data in PostgreSQL: authentication/JWT, catalog, reviews, cart, orders, admin, vouchers, and loyalty points. Exposes Swagger/OpenAPI. Deployed on Railway/Render.
+2. **Spring Boot backend** (`/bookstore` in this repository) — the main REST API. Owns all relational business data in PostgreSQL: authentication/JWT, catalog, reviews, cart, orders, admin, vouchers, and loyalty points. Exposes Swagger/OpenAPI. Deployed on Railway/Render.
 3. **Python RAG microservice** (FastAPI, in `/rag`, owned by team member P5) — ingests book files (PDF/EPUB), creates embeddings, performs retrieval, and generates grounded answers. Uses **Qdrant** (vector store) + **MongoDB** (chunk/image/document store, internal to this service only) + **OpenAI**.
 
 The React frontend communicates **only** with the Spring Boot backend. The Spring Boot backend calls the RAG microservice over internal HTTP. This keeps a single security and authorization boundary (the frontend never holds RAG credentials and never reaches Qdrant/Mongo directly).
@@ -170,9 +170,9 @@ Components are grouped by workstream. Each lists the requirements it satisfies.
 ### WS6 — Platform & DevOps (Req 24–27 + platform reqs)
 - **OpenApiConfig**: Swagger with bearer security scheme, per-endpoint role annotations.
 - **GlobalExceptionHandler**: consistent JSON error schema.
-- **HealthController**: app + DB health (200 / 503).
+- **HealthController**: `GET /api/health` app + DB health (200 / 503).
 - **RequestLoggingFilter**: logs method, path, status, duration; excludes secrets/tokens.
-- **CI/CD**: GitHub Actions builds/tests `/be` (Maven) and `/rag` (pytest), gates merges, deploys on main.
+- **CI/CD**: GitHub Actions builds/tests `/bookstore` (Maven) and `/rag` (pytest), gates merges, deploys on main.
 
 ### Python RAG Microservice (P5)
 
@@ -325,7 +325,7 @@ All error responses use a consistent JSON schema: `{ timestamp, status, error, m
 - **AI cost control**: per-user rate limit on `/ai/chat` (20 req/minute) → 429; bounded `top_k` (default 5, max 20) and context length (last 10 chronological user/assistant messages, excluding the separate prepended system instructions prompt).
 - **Config & secrets**: DB creds, JWT secret, OpenAI key, Qdrant/Mongo URLs from environment variables; missing required var → fail startup with a log naming it. CORS allowed origins from `APP_CORS_ALLOWED_ORIGINS`. `.env` git-ignored.
 - **CORS**: restricted to origins configured in `APP_CORS_ALLOWED_ORIGINS`.
-- **Observability**: request logging (no secrets), `/health` (200/503).
+- **Observability**: request logging (no secrets), `/api/health` (200/503).
 - **Local dev**: `docker-compose` runs postgres + qdrant + mongo with one command; same images used in deployment. Includes container healthchecks (e.g. postgres `pg_isready`, qdrant `curl http://localhost:6333/dashboard`) and `depends_on` conditions.
 - **Swagger security**: API docs (springdoc-openapi) are disabled on production using `springdoc.api-docs.enabled=false`.
 

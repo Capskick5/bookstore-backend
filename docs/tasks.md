@@ -7,7 +7,7 @@ This plan covers the **backend + AI** repository only: the Spring Boot REST API 
 ## Tasks
 
 - [ ] 1. Initialize repository structure and tooling
-  - Create layout: Spring Boot at root (`src/`, `pom.xml`), `rag/` for the Python service, `infra/` for compose, `docs/` present
+  - Create layout: Spring Boot in `bookstore/`, `rag/` for the Python service, `infra/` for compose, `docs/` present
   - Ensure `.gitignore` covers `.env`, `target/`, `__pycache__/`, `data/`, `assets/books/`, `_local/`
   - Add `.env.example` listing all variables (DB, JWT secret, OPENAI_API_KEY, QDRANT_URL, MONGO_URL, RAG_SERVICE_URL)
   - _Requirements: 26.1, 26.2_
@@ -33,7 +33,7 @@ This plan covers the **backend + AI** repository only: the Spring Boot REST API 
   - _Requirements: 26.3, 27.1, 27.4_
 
 - [ ] 6. Implement health endpoint
-  - `GET /health` returns 200 when app + DB available, 503 otherwise
+  - `GET /api/health` returns 200 when app + DB available, 503 otherwise
   - _Requirements: 27.2, 27.3_
 
 - [ ] 7. Configure Swagger/OpenAPI with bearer security
@@ -45,7 +45,7 @@ This plan covers the **backend + AI** repository only: the Spring Boot REST API 
   - _Requirements: 26.1_
 
 - [ ] 9. Set up GitHub Actions CI
-  - Build + test Spring Boot (Maven) and RAG (pytest) at root and /rag; failing checks block merge; secrets from repo/env, never committed (React frontend is in a separate repository and excluded from this pipeline)
+  - Build + test Spring Boot (`bookstore/`, Maven) and RAG (`rag/`, pytest); failing checks block merge; secrets from repo/env, never committed (React frontend is in a separate repository and excluded from this pipeline)
   - _Requirements: 25.1, 25.2, 25.4_
 
 - [ ] 10. Implement User entity, repository, and registration
@@ -160,7 +160,7 @@ This plan covers the **backend + AI** repository only: the Spring Boot REST API 
   - _Requirements: 26.1, 26.2, 26.3, 26.4_
 
 - [ ] 34. Finalize CI/CD deployment
-  - Deploy backend (Railway/Render) and RAG on merge to main; smoke-test `/health`
+  - Deploy backend (Railway/Render) and RAG on merge to main; smoke-test `/api/health`
   - _Requirements: 25.3_
 
 - [ ] 35. Property test: no overselling and money math

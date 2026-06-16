@@ -1,6 +1,6 @@
 # BookVerse — Kế hoạch dự án (bản chữ)
 
-> Bản trực quan: mở `plan/index.html` bằng trình duyệt. Chi tiết kỹ thuật: `docs/PROJECT-KICKOFF.md`.
+> Bản trực quan: mở `_local/plan/index.html` bằng trình duyệt nếu đang dùng bản local. Chi tiết kỹ thuật: `docs/PROJECT-KICKOFF.md`.
 
 ## Kiến trúc (nhắc lại nhanh)
 React (FE) → Spring Boot (API + PostgreSQL) → RAG service Python (Qdrant + MongoDB + OpenAI).
@@ -16,7 +16,7 @@ FE chỉ gọi Spring Boot. Spring Boot gọi RAG khi cần chatbot/gợi ý.
 Nguyên tắc: KHÔNG sang giai đoạn sau khi giai đoạn trước chưa chạy được.
 
 ## "Cổng mở" — đủ hết mới cho cả nhóm vào code
-- [ ] Cấu trúc repo: Spring Boot ở root (src/, pom.xml), /rag, /infra, /docs
+- [ ] Cấu trúc repo: Spring Boot ở `bookstore/`, RAG ở `/rag`, hạ tầng ở `/infra`, tài liệu ở `/docs`
 - [ ] docker-compose lên Postgres + Qdrant + Mongo (1 lệnh)
 - [ ] Migration đầu tiên tạo bảng `users` (Flyway)
 - [ ] Auth + JWT chạy: register / login / refresh / me
@@ -39,7 +39,7 @@ Nguyên tắc: KHÔNG sang giai đoạn sau khi giai đoạn trước chưa ch�
 
 ## Tuần 1 — Leader + P1 (chi tiết)
 **Ngày 1:** Leader tạo monorepo + `.gitignore` + docker-compose + bê `/rag` của P5 vào + `.env.example`. P1 khởi tạo Spring Boot (Web, Security, JPA, Flyway, Swagger, validation).
-**Ngày 2:** P1 làm migration users + Spring Security + JWT + register/login/refresh/me + Swagger Authorize. Leader làm `/health` + deploy thử Railway.
+**Ngày 2:** P1 làm migration users + Spring Security + JWT + register/login/refresh/me + Swagger Authorize. Leader làm `/api/health` + deploy thử Railway.
 **Ngày 3:** Leader làm CI (build+test) + seed data + export Swagger (hợp đồng API). Cả nhóm pull về chạy docker-compose + login OK → **CỔNG MỞ**.
 
 ## Rủi ro & cách xử lý (xem đầy đủ trong PROJECT-KICKOFF.md §3)
