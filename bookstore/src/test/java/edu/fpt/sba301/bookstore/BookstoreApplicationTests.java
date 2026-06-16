@@ -35,6 +35,17 @@ class BookstoreApplicationTests {
     }
 
     @Test
+    void testHealthAndSwaggerAreAvailable() throws Exception {
+        mockMvc.perform(get("/api/health"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("UP"))
+                .andExpect(jsonPath("$.db.status").value("UP"));
+
+        mockMvc.perform(get("/v3/api-docs"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
     void testRegisterAndLoginAndProfileFlow() throws Exception {
         String email = "newuser-" + java.util.UUID.randomUUID() + "@example.com";
         String password = "securePass123";
@@ -62,6 +73,20 @@ class BookstoreApplicationTests {
         Map<?, ?> map = objectMapper.readValue(responseBody, Map.class);
         Map<?, ?> dataMap = (Map<?, ?>) map.get("data");
         String accessToken = (String) dataMap.get("accessToken");
+        String refreshToken = (String) dataMap.get("refreshToken");
+
+        // 2.1 Refresh token rotation
+        MvcResult refreshResult = mockMvc.perform(post("/api/auth/refresh")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of("refreshToken", refreshToken))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.accessToken").exists())
+                .andExpect(jsonPath("$.data.refreshToken").exists())
+                .andReturn();
+
+        Map<?, ?> refreshMap = objectMapper.readValue(refreshResult.getResponse().getContentAsString(), Map.class);
+        Map<?, ?> refreshData = (Map<?, ?>) refreshMap.get("data");
+        accessToken = (String) refreshData.get("accessToken");
 
         // 3. Get profile
         mockMvc.perform(get("/api/auth/me")
