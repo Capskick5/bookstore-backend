@@ -29,7 +29,7 @@ assets/books/
 *.iml
 
 # ===== Spec riêng =====
-plan
+/plan/
 prototype
 _local
 bookverse-project-docs-all-in-one.zip

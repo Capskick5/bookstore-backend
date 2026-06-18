@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Phase 1 — Dựng nền (P6 + P1)</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+*{font-family:'Inter',sans-serif}
+body{background:#0f172a;color:#e2e8f0}
+.chk:checked+span{text-decoration:line-through;opacity:.5}
+.card{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);backdrop-filter:blur(10px)}
+.glow{box-shadow:0 0 30px rgba(99,102,241,.15)}
+</style>
+</head>
+<body>
+<div class="max-w-4xl mx-auto px-4 py-8">
+  <!-- Header -->
+  <div class="flex items-center gap-3 mb-2">
+    <span class="bg-indigo-500/20 text-indigo-300 text-xs font-bold px-3 py-1 rounded-full">PHASE 1</span>
+    <span class="bg-amber-500/20 text-amber-300 text-xs font-bold px-3 py-1 rounded-full">CHỈ 2 NGƯỜI: P6 + P1</span>
+  </div>
+  <h1 class="text-3xl font-800 text-white mb-1">🏗️ Dựng nền — Setup Gate</h1>
+  <p class="text-slate-400 text-sm mb-6">Mục tiêu: Ai pull repo về cũng <b class="text-emerald-400">chạy được DB + đăng nhập + Swagger</b>. Xong mới cho cả nhóm vào.</p>
+
+  <!-- Progress -->
+  <div class="card rounded-xl p-3 mb-6 flex items-center gap-3">
+    <span class="text-sm">Tiến độ:</span>
+    <div class="flex-1 bg-slate-700 rounded-full h-2"><div id="bar" class="bg-gradient-to-r from-indigo-500 to-emerald-400 h-2 rounded-full transition-all" style="width:0%"></div></div>
+    <b id="pct" class="text-indigo-300">0%</b>
+  </div>
+
+  <!-- Navigation -->
+  <div class="flex gap-2 mb-6 text-xs">
+    <span class="bg-indigo-500/30 text-indigo-200 px-3 py-1.5 rounded-lg font-bold">Phase 1</span>
+    <a href="phase2.html" class="card px-3 py-1.5 rounded-lg text-slate-400 hover:text-white transition">Phase 2 →</a>
+    <a href="phase3.html" class="card px-3 py-1.5 rounded-lg text-slate-400 hover:text-white transition">Phase 3 →</a>
+    <a href="phase4.html" class="card px-3 py-1.5 rounded-lg text-slate-400 hover:text-white transition">Phase 4 →</a>
+  </div>
+
+  <div class="grid md:grid-cols-2 gap-4">
+    <!-- P6 Column -->
+    <div>
+      <div class="bg-gradient-to-r from-slate-600 to-zinc-700 text-white rounded-t-xl p-3 flex items-center gap-2">
+        <span class="text-lg">🧭</span>
+        <div><div class="text-[10px] opacity-70">P6 (Leader — Bạn)</div><div class="font-bold text-sm">Hạ tầng & Môi trường</div></div>
+      </div>
+      <div class="card border-t-0 rounded-b-xl divide-y divide-white/5" id="p6"></div>
+    </div>
+    <!-- P1 Column -->
+    <div>
+      <div class="bg-gradient-to-r from-rose-500 to-pink-600 text-white rounded-t-xl p-3 flex items-center gap-2">
+        <span class="text-lg">🔐</span>
+        <div><div class="text-[10px] opacity-70">P1</div><div class="font-bold text-sm">Spring Boot & Auth</div></div>
+      </div>
+      <div class="card border-t-0 rounded-b-xl divide-y divide-white/5" id="p1"></div>
+    </div>
+  </div>
+
+  <!-- Gate -->
+  <div class="card glow rounded-xl p-4 mt-6 text-center">
+    <div class="text-lg mb-1">🚪 <b class="text-emerald-400">Cổng mở khi:</b></div>
+    <p class="text-slate-300 text-sm">docker compose up → 3 DB chạy · App Spring Boot khởi động OK · Đăng nhập trả token · Swagger mở được · Đã push GitHub</p>
+    <p class="text-indigo-300 text-xs mt-2">→ Hô cả nhóm pull về, chuyển sang <a href="phase2.html" class="underline font-bold">Phase 2</a></p>
+  </div>
+</div>
+
+<script>
+const P6=[
+ {t:"Tạo repo + thư mục + .gitignore [Task 1]",done:"✅ ĐÃ XONG"},
+ {t:"Viết docker-compose (Postgres + Qdrant + Mongo) [Task 2]",done:"✅ ĐÃ XONG"},
+ {t:"Tạo .env.example đầy đủ biến [Task 1]",done:"✅ ĐÃ XONG"},
+ {t:"Đưa service /rag của P5 vào repo [Task 1 & Task 27 placeholder]",done:"✅ ĐÃ XONG"},
+ {t:"Cài CI GitHub Actions (ci.yml) [Task 9]",done:"✅ ĐÃ XONG"},
+ {t:"Deploy thử Railway — gọi /health [Task 34 setup]",done:"✅ ĐÃ XONG"},
+];
+const P1=[
+ {t:"Tạo project Spring Boot (Java 21) [Task 3]",done:"✅ ĐÃ XONG"},
+ {t:"Nối database PostgreSQL [Task 3]",done:"✅ ĐÃ XONG"},
+ {t:"Migration V1__init.sql (15 bảng, money kiểu BIGINT) [Task 4]",done:"✅ ĐÃ XONG"},
+ {t:"Error handler (custom EntryPoint/AccessDeniedHandler) + GET /health [Task 5, Task 6, Task 12]",done:"✅ ĐÃ XONG"},
+ {t:"Auth JWT & daily token cleanup scheduler (register/login/refresh/me) [Task 10, Task 11, Task 12, Task 13]",done:"✅ ĐÃ XONG"},
+ {t:"Bật Swagger + nút Authorize (tắt trên prod) [Task 7, Task 12]",done:"✅ ĐÃ XONG"},
+ {t:"Seed data (1 admin + 12 sách) [Task 8]",done:"✅ ĐÃ XONG"},
+];
+function render(arr,el){
+ document.getElementById(el).innerHTML=arr.map((s,i)=>`
+  <label class="flex gap-3 p-3 cursor-pointer hover:bg-white/5 transition">
+   <input type="checkbox" class="chk mt-0.5 accent-emerald-400 shrink-0" data-k="${el}${i}" ${s.done.startsWith("✅")?"checked disabled":""}>
+   <span class="text-sm">
+    <b class="text-white">${s.t}</b>
+    <div class="text-xs mt-0.5 ${s.done.startsWith("✅")?"text-emerald-400":"text-slate-400"}">Xong khi: ${s.done}</div>
+    ${s.need?`<div class="text-xs text-amber-400 mt-0.5">${s.need}</div>`:""}
+   </span>
+  </label>`).join("");
+}
+render(P6,"p6");render(P1,"p1");
+const boxes=document.querySelectorAll(".chk:not([disabled])");
+boxes.forEach(b=>{b.checked=localStorage.getItem(b.dataset.k)==="1";b.onchange=()=>{localStorage.setItem(b.dataset.k,b.checked?"1":"0");pct();}});
+function pct(){const a=[...document.querySelectorAll(".chk")],d=a.filter(x=>x.checked).length;const p=Math.round(d/a.length*100);document.getElementById("pct").textContent=p+"%";document.getElementById("bar").style.width=p+"%";}
+pct();
+</script>
+</body>
+</html>
