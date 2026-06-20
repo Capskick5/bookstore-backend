@@ -33,6 +33,7 @@ body{background:#0f172a;color:#e2e8f0}
     <span class="bg-violet-500/30 text-violet-200 px-3 py-1.5 rounded-lg font-bold">Phase 2</span>
     <a href="phase3.html" class="card px-3 py-1.5 rounded-lg text-slate-400 hover:text-white transition">Phase 3 →</a>
     <a href="phase4.html" class="card px-3 py-1.5 rounded-lg text-slate-400 hover:text-white transition">Phase 4 →</a>
+    <a href="leader.html" class="bg-amber-500/20 text-amber-300 px-3 py-1.5 rounded-lg font-bold">Leader timeline</a>
   </div>
 
   <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-4" id="grid"></div>
@@ -199,7 +200,8 @@ const data=[
     ]
   }
 ];
-document.getElementById("grid").innerHTML=data.map(d=>`
+const orderedData=[...data].sort((a,b)=>Number(a.who.slice(1))-Number(b.who.slice(1)));
+document.getElementById("grid").innerHTML=orderedData.map(d=>`
  <div>
   <div class="bg-gradient-to-r ${d.color} text-white rounded-t-xl p-3 flex items-center gap-2">
    <span class="text-lg">${d.icon}</span>

@@ -1,6 +1,6 @@
 # BookVerse — Kế hoạch dự án (bản chữ)
 
-> Bản trực quan: mở `docs/plan/index.html` bằng trình duyệt. Chi tiết kỹ thuật: `docs/PROJECT-KICKOFF.md`.
+> Bản trực quan: mở `docs/plan/index.html`. Leader theo dõi thứ tự và dependency tại `docs/plan/leader.html`. Chi tiết kỹ thuật: `docs/PROJECT-KICKOFF.md`.
 
 ## Kiến trúc (nhắc lại nhanh)
 React (FE) → Spring Boot (API + PostgreSQL) → RAG service Python (Qdrant + MongoDB + OpenAI).
