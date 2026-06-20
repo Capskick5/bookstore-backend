@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.fpt.sba301.bookstore.dto.request.BookRequest;
 import edu.fpt.sba301.bookstore.dto.request.CategoryRequest;
 import edu.fpt.sba301.bookstore.dto.request.LoginRequest;
+import edu.fpt.sba301.bookstore.dto.request.RegisterRequest;
 import edu.fpt.sba301.bookstore.dto.response.ApiResponse;
 import edu.fpt.sba301.bookstore.entity.Book;
 import edu.fpt.sba301.bookstore.entity.Category;
@@ -68,8 +69,16 @@ class AdminCatalogTests {
                 .andReturn();
         adminToken = extractToken(adminResult);
 
-        // Get Customer token
-        LoginRequest customerLogin = new LoginRequest("test@example.com", "password123");
+        // Register a unique customer so this test does not depend on local seed history.
+        String customerEmail = "catalog-test-" + java.util.UUID.randomUUID() + "@example.com";
+        String customerPassword = "password123";
+        RegisterRequest registerRequest = new RegisterRequest(customerEmail, customerPassword, "Catalog Test User");
+        mockMvc.perform(post("/api/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(registerRequest)))
+                .andExpect(status().isCreated());
+
+        LoginRequest customerLogin = new LoginRequest(customerEmail, customerPassword);
         MvcResult customerResult = mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(customerLogin)))
@@ -203,6 +212,19 @@ class AdminCatalogTests {
         Map<?, ?> data = (Map<?, ?>) map.get("data");
         Number bookId = (Number) data.get("id");
 
+        // The newly created active book must be visible through the public catalog.
+        mockMvc.perform(get("/api/books/" + bookId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.title").value("Test Title"));
+
+        mockMvc.perform(get("/api/books").param("page", "0").param("size", "50"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.content").isArray())
+                .andExpect(jsonPath("$.data.number").value(0))
+                .andExpect(jsonPath("$.data.size").value(50))
+                .andExpect(jsonPath("$.data.totalElements").isNumber())
+                .andExpect(jsonPath("$.data.totalPages").isNumber());
+
         // 2. Validate price=0 and stock=0 -> 400
         BookRequest invalidReq = new BookRequest(
                 "Test Title", "Test Author", category.getId(),
@@ -226,6 +248,19 @@ class AdminCatalogTests {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.title").value("Updated Title"));
 
+        BookRequest hideReq = new BookRequest(
+                "Updated Title", "Test Author", category.getId(),
+                180000L, 250000L, 40, "Updated Desc", "http://cover.url", false
+        );
+        mockMvc.perform(put("/api/admin/books/" + bookId)
+                        .header("Authorization", "Bearer " + adminToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(hideReq)))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(get("/api/books/" + bookId))
+                .andExpect(status().isNotFound());
+
         // 4. Hard Delete Book (not referenced by orders)
         mockMvc.perform(delete("/api/admin/books/" + bookId)
                         .header("Authorization", "Bearer " + adminToken))
@@ -233,6 +268,9 @@ class AdminCatalogTests {
 
         // Verify deleted
         assertFalse(bookRepository.findById(bookId.longValue()).isPresent());
+
+        mockMvc.perform(get("/api/books/" + bookId))
+                .andExpect(status().isNotFound());
 
         // Clean up
         categoryRepository.delete(category);

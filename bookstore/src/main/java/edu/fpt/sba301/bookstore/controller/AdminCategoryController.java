@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.text.Normalizer;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -116,12 +117,19 @@ public class AdminCategoryController {
     }
 
     private String slugify(String name) {
-        if (name == null)
+        if (name == null) {
             return "";
-        return name.toLowerCase()
+        }
+
+        String normalized = Normalizer.normalize(name, Normalizer.Form.NFD)
+                .replaceAll("\\p{M}", "")
+                .replace('đ', 'd')
+                .replace('Đ', 'D');
+
+        return normalized.toLowerCase()
                 .replaceAll("[^a-z0-9\\s-]", "")
                 .replaceAll("\\s+", "-")
                 .replaceAll("-+", "-")
-                .trim();
+                .replaceAll("^-|-$", "");
     }
 }
