@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>BookVerse — Sơ đồ quan hệ Database (ERD)</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,700;9..144,900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  *{font-family:'Inter',sans-serif}
+  body{background:#FBF7F0;color:#1C1917;margin:0;padding:0}
+  .wrap{max-width:1200px;margin:0 auto;padding:24px}
+  h1{font-family:'Fraunces',serif;color:#0F5132;font-size:28px;margin:0}
+  .sub{color:#6b7280;font-size:14px;margin-top:4px}
+  .legend{display:flex;flex-wrap:wrap;gap:14px;margin:16px 0;font-size:13px;color:#374151}
+  .legend b{color:#0F5132}
+  .card{background:#fff;border:1px solid #e7e0d4;border-radius:16px;padding:18px;overflow:auto}
+  .badge{display:inline-block;background:#E7F2EC;color:#0F5132;font-weight:600;font-size:12px;padding:2px 10px;border-radius:999px;margin-right:6px}
+  .note{font-size:13px;color:#6b7280;margin-top:14px;line-height:1.6}
+  .mermaid{min-width:1000px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>📊 BookVerse — Sơ đồ quan hệ Database</h1>
+  <div class="sub">PostgreSQL (Spring Boot). Tiền lưu bằng số nguyên VND. Mở file này bằng trình duyệt để xem.</div>
+
+  <div class="legend">
+    <span><span class="badge">PK</span> Khóa chính</span>
+    <span><span class="badge">FK</span> Khóa ngoại (nối sang bảng khác)</span>
+    <span><b>||--o{</b> = một–nhiều</span>
+    <span><b>||--o|</b> = một–một (tối đa 1)</span>
+  </div>
+
+  <div class="card">
+    <pre class="mermaid">
+erDiagram
+    users ||--o{ addresses : "có"
+    users ||--o| carts : "sở hữu"
+    users ||--o{ orders : "đặt"
+    users ||--o{ reviews : "viết"
+    users ||--o{ point_transactions : "ghi điểm"
+    users ||--o{ conversations : "trò chuyện"
+    users ||--o{ voucher_redemptions : "dùng voucher"
+    categories ||--o{ books : "phân loại"
+    books ||--o{ reviews : "được đánh giá"
+    books ||--o{ cart_items : "trong giỏ"
+    books ||--o{ order_items : "trong đơn"
+    carts ||--o{ cart_items : "gồm"
+    orders ||--o{ order_items : "gồm"
+    orders ||--o{ point_transactions : "sinh điểm"
+    orders ||--o| voucher_redemptions : "áp dụng"
+    vouchers ||--o{ voucher_redemptions : "được dùng"
+    conversations ||--o{ messages : "gồm"
+
+    users {
+        bigint id PK
+        varchar email UK
+        varchar password_hash
+        varchar full_name
+        varchar role "ADMIN|CUSTOMER"
+        boolean enabled
+        bigint points
+        varchar tier
+        timestamptz created_at
+    }
+    addresses {
+        bigint id PK
+        bigint user_id FK
+        varchar recipient
+        varchar phone
+        varchar line
+        varchar city
+        boolean is_default
+    }
+    categories {
+        bigint id PK
+        varchar name UK
+        varchar slug UK
+    }
+    books {
+        bigint id PK
+        varchar title
+        varchar author
+        bigint category_id FK
+        bigint price "VND"
+        bigint original_price
+        int stock
+        text description
+        varchar cover_url
+        numeric rating_avg
+        int sold_count
+        boolean active
+        timestamptz created_at
+        timestamptz updated_at
+    }
+    reviews {
+        bigint id PK
+        bigint book_id FK
+        bigint user_id FK
+        int rating "1..5"
+        text comment
+        timestamptz created_at
+    }
+    carts {
+        bigint id PK
+        bigint user_id FK "unique - 1 giỏ/user"
+    }
+    cart_items {
+        bigint id PK
+        bigint cart_id FK
+        bigint book_id FK
+        int quantity
+    }
+    orders {
+        bigint id PK
+        bigint user_id FK
+        varchar status "PENDING..CANCELLED"
+        bigint subtotal
+        bigint discount
+        bigint shipping_fee
+        bigint total
+        text address_snapshot
+        varchar payment_method
+        varchar voucher_code
+        bigint points_used
+        bigint points_earned
+        varchar idempotency_key UK
+        timestamptz created_at
+    }
+    order_items {
+        bigint id PK
+        bigint order_id FK
+        bigint book_id FK
+        varchar title_snapshot
+        bigint unit_price
+        int quantity
+    }
+    vouchers {
+        bigint id PK
+        varchar code UK
+        varchar type "FIXED|PERCENT|SHIP"
+        bigint value
+        bigint min_order
+        bigint max_discount
+        int usage_limit
+        int per_user_limit
+        timestamptz starts_at
+        timestamptz ends_at
+        boolean active
+    }
+    voucher_redemptions {
+        bigint id PK
+        bigint voucher_id FK
+        bigint user_id FK
+        bigint order_id FK
+        timestamptz created_at
+    }
+    point_transactions {
+        bigint id PK
+        bigint user_id FK
+        bigint order_id FK
+        bigint delta "+/-"
+        varchar reason
+        timestamptz created_at
+    }
+    conversations {
+        bigint id PK
+        bigint user_id FK
+        timestamptz created_at
+    }
+    messages {
+        bigint id PK
+        bigint conversation_id FK
+        varchar role "user|assistant"
+        text content
+        jsonb sources_json
+        timestamptz created_at
+    }
+    </pre>
+  </div>
+
+  <div class="note">
+    <b>Đọc sơ đồ thế nào (cho người mới):</b> mỗi ô là một bảng. Đường nối thể hiện quan hệ.
+    Ví dụ <code>users ||--o{ orders</code> nghĩa là <b>1 user có nhiều order</b>, mỗi order thuộc về đúng 1 user
+    (qua cột <code>user_id</code>). <code>orders ||--o{ order_items</code> nghĩa là 1 đơn gồm nhiều dòng sản phẩm.
+    <code>UK</code> = unique (không trùng), <code>FK_UK</code> = vừa khóa ngoại vừa duy nhất (mỗi user chỉ 1 giỏ).
+    <br><br>
+    <b>Lưu ý:</b> Qdrant (vector) và MongoDB (chunk/ảnh) thuộc service RAG của P5, KHÔNG nằm trong sơ đồ quan hệ này
+    vì chúng không phải database quan hệ. File SQL thật: <code>docs/erd/schema.sql</code>.
+  </div>
+</div>
+
+<script>mermaid.initialize({startOnLoad:true, theme:'base', themeVariables:{primaryColor:'#E7F2EC', primaryBorderColor:'#0F5132', lineColor:'#177245', fontFamily:'Inter'}});</script>
+</body>
+</html>

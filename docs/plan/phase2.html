@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Phase 2 — Code lõi (Cả nhóm)</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+*{font-family:'Inter',sans-serif}
+body{background:#0f172a;color:#e2e8f0}
+.chk:checked+span{text-decoration:line-through;opacity:.5}
+.card{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);backdrop-filter:blur(10px)}
+</style>
+</head>
+<body>
+<div class="max-w-5xl mx-auto px-4 py-8">
+  <div class="flex items-center gap-3 mb-2">
+    <span class="bg-violet-500/20 text-violet-300 text-xs font-bold px-3 py-1 rounded-full">PHASE 2</span>
+    <span class="bg-emerald-500/20 text-emerald-300 text-xs font-bold px-3 py-1 rounded-full">CẢ 6 NGƯỜI SONG SONG</span>
+  </div>
+  <h1 class="text-3xl font-800 text-white mb-1">⚡ Code lõi — Tính năng chính</h1>
+  <p class="text-slate-400 text-sm mb-6">Mỗi người code phần của mình. <b class="text-violet-300">Commit nhỏ, thường xuyên, git pull --rebase trước khi push.</b></p>
+
+  <div class="card rounded-xl p-3 mb-6 flex items-center gap-3">
+    <span class="text-sm">Tiến độ:</span>
+    <div class="flex-1 bg-slate-700 rounded-full h-2"><div id="bar" class="bg-gradient-to-r from-violet-500 to-cyan-400 h-2 rounded-full transition-all" style="width:0%"></div></div>
+    <b id="pct" class="text-violet-300">0%</b>
+  </div>
+
+  <div class="flex gap-2 mb-6 text-xs flex-wrap">
+    <a href="phase1.html" class="card px-3 py-1.5 rounded-lg text-slate-400 hover:text-white transition">← Phase 1</a>
+    <span class="bg-violet-500/30 text-violet-200 px-3 py-1.5 rounded-lg font-bold">Phase 2</span>
+    <a href="phase3.html" class="card px-3 py-1.5 rounded-lg text-slate-400 hover:text-white transition">Phase 3 →</a>
+    <a href="phase4.html" class="card px-3 py-1.5 rounded-lg text-slate-400 hover:text-white transition">Phase 4 →</a>
+    <a href="leader.html" class="bg-amber-500/20 text-amber-300 px-3 py-1.5 rounded-lg font-bold">Leader timeline</a>
+  </div>
+
+  <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-4" id="grid"></div>
+
+  <div class="card rounded-xl p-4 mt-6 text-center">
+    <b class="text-cyan-400">✅ Xong Phase 2 khi:</b>
+    <p class="text-slate-300 text-sm mt-1">Mỗi endpoint đã chạy được trên Swagger · Có test cơ bản · Dữ liệu lưu đúng vào DB · RAG trả lời được câu hỏi từ sách thật</p>
+  </div>
+</div>
+
+<script>
+const data=[
+  {
+    who:"P4",
+    icon:"🛠",
+    color:"from-emerald-500 to-teal-500",
+    label:"Admin & Cấu hình",
+    tasks:[
+      {
+        step: "B1",
+        t:"CRUD Danh mục [Task 22]",
+        desc:"Viết API CRUD danh mục sách. Đảm bảo tên danh mục là duy nhất (trả 409 nếu trùng). Chặn xóa danh mục nếu đang có sách tham chiếu (trả 409).",
+        done:"Admin quản lý category OK, thử xóa category có sách bị báo lỗi 409.",
+        need:""
+      },
+      {
+        step: "B2",
+        t:"CRUD Sách [Task 21]",
+        desc:"Viết API CRUD sách cho Admin. Chặn giá/stock âm. Chặn xóa sách vật lý nếu đã có trong đơn hàng (soft-delete đặt active=false). Khi sửa/xóa, phát BookChangedEvent bất đồng bộ để P5 reindex sang Vector database.",
+        done:"Admin tạo/sửa/ẩn sách OK, có phát event.",
+        need:"P4 làm xong B1 (Danh mục) trước."
+      }
+    ]
+  },
+  {
+    who:"P2",
+    icon:"📚",
+    color:"from-blue-500 to-cyan-500",
+    label:"Catalog & Tìm kiếm",
+    tasks:[
+      {
+        step: "B1",
+        t:"API danh sách sách + phân trang [Task 14]",
+        desc:"Trả về danh sách sách hiển thị cho khách. Phân trang mặc định 10, tối đa 50 phần tử. Ẩn toàn bộ sách có active=false.",
+        done:"GET /books trả đúng cấu trúc phân trang, không hiện sách bị ẩn.",
+        need:"Chờ P4 xong B2 để có sách mẫu."
+      },
+      {
+        step: "B2",
+        t:"Chi tiết sách [Task 16]",
+        desc:"Xem chi tiết một cuốn sách theo ID. Trả về đầy đủ thông tin tồn kho, rating_avg. Nếu ID không tồn tại, trả về body RỖNG với mã lỗi 404.",
+        done:"GET /books/{id} chạy OK, 404 trả body rỗng.",
+        need:"Chờ P4 xong B2."
+      },
+      {
+        step: "B3",
+        t:"Tìm kiếm + bộ lọc [Task 15]",
+        desc:"Tìm kiếm không phân biệt hoa thường (title, author). Bộ lọc kết hợp theo danh mục, khoảng giá. Từ chối yêu cầu nếu minPrice > maxPrice (trả về 400).",
+        done:"Bộ lọc kết hợp chạy đúng chuẩn, bắt lỗi minPrice > maxPrice.",
+        need:"Xong B1 + B2."
+      }
+    ]
+  },
+  {
+    who:"P3",
+    icon:"🛒",
+    color:"from-amber-500 to-orange-500",
+    label:"Cart & Checkout",
+    tasks:[
+      {
+        step: "B1",
+        t:"Giỏ hàng CRUD [Task 18]",
+        desc:"Quản lý giỏ hàng của user đã đăng nhập. Thêm/sửa/xóa item, tính subtotal real-time theo giá hiện tại của sách. Chặn số lượng lớn hơn tồn kho (trả 400).",
+        done:"API CRUD giỏ hàng chạy tốt, tính đúng subtotal.",
+        need:"Chờ P2 xong B2 (Chi tiết sách) để đối chiếu tồn kho."
+      },
+      {
+        step: "B2",
+        t:"Gộp giỏ hàng Guest [Task 18]",
+        desc:"Khi đăng nhập, tự động gộp giỏ hàng tạm (Guest) từ client vào giỏ của User. Trùng sách thì cộng dồn số lượng (giới hạn theo stock). Bỏ qua sách inactive.",
+        done:"Đăng nhập xong, giỏ hàng tự gộp và cập nhật giá real-time.",
+        need:"Xong B1."
+      },
+      {
+        step: "B3",
+        t:"Checkout khởi tạo [Task 19]",
+        desc:"Nhận giỏ hàng, xác nhận tồn kho, tạo đơn hàng trạng thái PENDING. Giữ kho tạm trong 15 phút. Tạo URL thanh toán (Payment URL) để trả về cho FE.",
+        done:"Gọi checkout trả về Đơn hàng PENDING + URL thanh toán.",
+        need:"Chờ P2 xong B2 + P3 xong B2."
+      }
+    ]
+  },
+  {
+    who:"P5",
+    icon:"🤖",
+    color:"from-purple-500 to-fuchsia-500",
+    label:"AI / RAG",
+    tasks:[
+      {
+        step: "B1",
+        t:"Tích hợp API OpenAI thật [Task 27]",
+        desc:"Thay thế FakeOpenAI trong service RAG bằng thư viện gọi OpenAI thật. Dùng model text-embedding-3-small (1536 dim) và gpt-4o-mini.",
+        done:"Các lệnh gọi sinh embedding và chat chạy qua OpenAI thật.",
+        need:""
+      },
+      {
+        step: "B2",
+        t:"Hệ thống nạp sách (Ingestion) [Task 28]",
+        desc:"Viết script/API đọc sách PDF/EPUB (chỉ lấy text đơn thuần, bỏ qua layout phức tạp) để cắt nhỏ (chunk), embed và lưu vào Qdrant (vector) + MongoDB (chunk text). Tạo payload index trên book_id trong Qdrant.",
+        done:"Nạp thử 1 sách thành công, kiểm tra dữ liệu có trong Qdrant & Mongo.",
+        need:"Xong B1."
+      },
+      {
+        step: "B3",
+        t:"Truy vấn RAG cơ bản [Task 29]",
+        desc:"Nhận câu hỏi -> embed -> tìm top_k tương tự trong Qdrant -> đính kèm context vào prompt gửi LLM. Nếu không tìm thấy source đạt ngưỡng -> trả lời 'không có trong dữ liệu'.",
+        done:"POST /query trả về câu trả lời kèm danh sách nguồn trích dẫn.",
+        need:"Xong B2."
+      }
+    ]
+  },
+  {
+    who:"P1",
+    icon:"🔐",
+    color:"from-rose-500 to-pink-600",
+    label:"Profile & Địa chỉ",
+    tasks:[
+      {
+        step: "B1",
+        t:"Xem & Sửa Profile [Task 13]",
+        desc:"Viết API GET /auth/me để xem thông tin user hiện tại và PUT /me để cập nhật profile. Đổi mật khẩu cần kiểm tra mật khẩu hiện tại (trả 400 nếu sai).",
+        done:"Profile xem/sửa OK, đổi mật khẩu bắt buộc nhập đúng mật khẩu cũ.",
+        need:""
+      },
+      {
+        step: "B2",
+        t:"Quản lý Địa chỉ CRUD [Task 13]",
+        desc:"Viết API CRUD địa chỉ nhận hàng của user (/me/addresses). Hỗ trợ đặt địa chỉ mặc định (chỉ duy nhất 1 địa chỉ mặc định).",
+        done:"Thêm/sửa/xóa địa chỉ OK, đánh dấu mặc định hoạt động đúng.",
+        need:"Xong B1."
+      },
+      {
+        step: "B3",
+        t:"Tính hạng thành viên (Tier) [Task 13]",
+        desc:"Tính toán và trả về hạng thành viên động dựa trên lifetime_points trong DB: SILVER (< 1000), GOLD (1000-4999), PLATINUM (>= 5000).",
+        done:"Hạng thành viên thay đổi chính xác khi thay đổi lifetime_points.",
+        need:"Xong B2."
+      }
+    ]
+  },
+  {
+    who:"P6",
+    icon:"🧭",
+    color:"from-slate-500 to-zinc-600",
+    label:"DevOps & CORS",
+    tasks:[
+      {
+        step: "B1",
+        t:"Cấu hình CORS linh hoạt [Task 33]",
+        desc:"Đọc danh sách domain được phép gọi API từ biến môi trường APP_CORS_ALLOWED_ORIGINS. Đảm bảo FE localhost gọi không bị block CORS.",
+        done:"Cấu hình CORS được áp dụng, test thử với client khác không bị lỗi.",
+        need:""
+      }
+    ]
+  }
+];
+const orderedData=[...data].sort((a,b)=>Number(a.who.slice(1))-Number(b.who.slice(1)));
+document.getElementById("grid").innerHTML=orderedData.map(d=>`
+ <div>
+  <div class="bg-gradient-to-r ${d.color} text-white rounded-t-xl p-3 flex items-center gap-2">
+   <span class="text-lg">${d.icon}</span>
+   <div><div class="text-[10px] opacity-70">${d.who}</div><div class="font-bold text-sm">${d.label}</div></div>
+  </div>
+  <div class="card border-t-0 rounded-b-xl divide-y divide-white/5">
+   ${d.tasks.map((s,i)=>`
+    <label class="flex gap-3 p-3 cursor-pointer hover:bg-white/5 transition">
+     <input type="checkbox" class="chk mt-1 accent-emerald-400 shrink-0" data-k="p2_${d.who}${i}">
+     <span class="text-sm">
+      <span class="inline-block bg-white/10 text-white text-[10px] px-1.5 py-0.5 rounded font-bold mr-1">${s.step}</span>
+      <b class="text-white">${s.t}</b>
+      <div class="text-xs text-slate-300 mt-1"><b>Mô tả:</b> ${s.desc}</div>
+      <div class="text-xs text-emerald-400 mt-1"><b>Xong khi:</b> ${s.done}</div>
+      ${s.need?`<div class="text-xs text-amber-400 mt-1">⏳ <b>Điều kiện:</b> ${s.need}</div>`:""}
+     </span>
+    </label>`).join("")}
+  </div>
+ </div>`).join("");
+const boxes=document.querySelectorAll(".chk");
+boxes.forEach(b=>{b.checked=localStorage.getItem(b.dataset.k)==="1";b.onchange=()=>{localStorage.setItem(b.dataset.k,b.checked?"1":"0");pct();}});
+function pct(){const a=[...document.querySelectorAll(".chk")],d=a.filter(x=>x.checked).length;const p=Math.round(d/a.length*100);document.getElementById("pct").textContent=p+"%";document.getElementById("bar").style.width=p+"%";}
+pct();
+</script>
+</body>
+</html>

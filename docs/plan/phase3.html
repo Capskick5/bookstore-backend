@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Phase 3 — Tính năng nâng cao</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+*{font-family:'Inter',sans-serif}
+body{background:#0f172a;color:#e2e8f0}
+.chk:checked+span{text-decoration:line-through;opacity:.5}
+.card{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);backdrop-filter:blur(10px)}
+</style>
+</head>
+<body>
+<div class="max-w-5xl mx-auto px-4 py-8">
+  <div class="flex items-center gap-3 mb-2">
+    <span class="bg-cyan-500/20 text-cyan-300 text-xs font-bold px-3 py-1 rounded-full">PHASE 3</span>
+    <span class="bg-emerald-500/20 text-emerald-300 text-xs font-bold px-3 py-1 rounded-full">CẢ 6 NGƯỜI SONG SONG</span>
+  </div>
+  <h1 class="text-3xl font-800 text-white mb-1">🚀 Tính năng nâng cao</h1>
+  <p class="text-slate-400 text-sm mb-6">Hoàn thiện Reviews, Đơn hàng, Voucher, Dashboard, Chatbot tích hợp.</p>
+
+  <div class="card rounded-xl p-3 mb-6 flex items-center gap-3">
+    <span class="text-sm">Tiến độ:</span>
+    <div class="flex-1 bg-slate-700 rounded-full h-2"><div id="bar" class="bg-gradient-to-r from-cyan-500 to-emerald-400 h-2 rounded-full transition-all" style="width:0%"></div></div>
+    <b id="pct" class="text-cyan-300">0%</b>
+  </div>
+
+  <div class="flex gap-2 mb-6 text-xs flex-wrap">
+    <a href="phase1.html" class="card px-3 py-1.5 rounded-lg text-slate-400 hover:text-white transition">← Phase 1</a>
+    <a href="phase2.html" class="card px-3 py-1.5 rounded-lg text-slate-400 hover:text-white transition">← Phase 2</a>
+    <span class="bg-cyan-500/30 text-cyan-200 px-3 py-1.5 rounded-lg font-bold">Phase 3</span>
+    <a href="phase4.html" class="card px-3 py-1.5 rounded-lg text-slate-400 hover:text-white transition">Phase 4 →</a>
+    <a href="leader.html" class="bg-amber-500/20 text-amber-300 px-3 py-1.5 rounded-lg font-bold">Leader timeline</a>
+  </div>
+
+  <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-4" id="grid"></div>
+
+  <div class="card rounded-xl p-4 mt-6 text-center">
+    <b class="text-emerald-400">✅ Xong Phase 3 khi:</b>
+    <p class="text-slate-300 text-sm mt-1">Đánh giá sách chạy OK · Hủy đơn hoàn kho · Voucher áp dụng đúng · Dashboard thống kê · AI chatbot trả lời từ Spring Boot · Gợi ý sách chính xác</p>
+  </div>
+</div>
+
+<script>
+const data=[
+  {
+    who:"P4",
+    icon:"🛠",
+    color:"from-emerald-500 to-teal-500",
+    label:"Admin nâng cao & Voucher",
+    tasks:[
+      {
+        step: "B1",
+        t:"CRUD Voucher & Áp dụng Voucher [Task 26]",
+        desc:"Tạo API quản lý voucher (mã, loại FIXED/PERCENT/SHIP, số lượng dùng, hạn, min_order). Chỉ cho áp dụng duy nhất 1 voucher/đơn. Cộng used_count atomically. Hỗ trợ POST /vouchers/apply.",
+        done:"Voucher áp dụng chính xác theo rule, không chồng chéo với điểm thưởng.",
+        need:""
+      },
+      {
+        step: "B2",
+        t:"Quản lý Đơn hàng cho Admin [Task 23]",
+        desc:"API quản lý đơn hàng. Chuyển trạng thái PAID -> SHIPPED -> DELIVERED. Viết logic hoàn/hủy sau DELIVERED (admin refund) - tự động thu hồi points và voucher.",
+        done:"Flow trạng thái đơn chuyển chính xác, thu hồi điểm và cập nhật kho khi admin refund.",
+        need:"Chờ P3 hoàn thành B2 (Đơn hàng & Lịch sử)."
+      },
+      {
+        step: "B3",
+        t:"Quản lý Người dùng [Task 24]",
+        desc:"Xem danh sách user, phân lại role (ADMIN/CUSTOMER), disable account. Khi disable account, chặn login và lập tức thu hồi mọi JWT token (hoặc check Enabled status trên filter). Chặn admin tự khóa chính mình.",
+        done:"Disable user -> đăng nhập bị chặn ngay lập tức.",
+        need:"Xong B2."
+      },
+      {
+        step: "B4",
+        t:"Dashboard thống kê [Task 25]",
+        desc:"API thống kê tổng doanh thu (trừ đơn CANCELLED), số lượng đơn hàng, sách bán chạy top 5 trong khoảng start_date -> end_date.",
+        done:"GET /admin/stats trả đúng số liệu báo cáo thực tế.",
+        need:"Xong B3."
+      }
+    ]
+  },
+  {
+    who:"P3",
+    icon:"🛒",
+    color:"from-amber-500 to-orange-500",
+    label:"Payment & Orders & Points",
+    tasks:[
+      {
+        step: "B1",
+        t:"Tích hợp Webhook thanh toán (VNPAY) [Task 19, Task 19a]",
+        desc:"Xử lý webhook callback `/api/payment/webhook/{provider}`. Kiểm tra signature hợp lệ, chuyển đơn sang PAID, giảm kho thực tế + cộng lifetime_points. Dùng PESSIMISTIC LOCK (SELECT FOR UPDATE) để tránh race condition với timeout scheduler.",
+        done:"Webhook cập nhật đơn sang PAID thành công, ghi log chính xác.",
+        need:"Chờ P3 hoàn thành B3 ở Phase 2 (Checkout)."
+      },
+      {
+        step: "B2",
+        t:"Đơn hàng & Hủy đơn [Task 20]",
+        desc:"Lịch sử đơn hàng của User (phân trang). Xem chi tiết đơn hàng (phải check đúng chủ sở hữu đơn). API hủy đơn (chỉ cho phép trạng thái PENDING/PAID, trả lại kho, hoàn points).",
+        done:"Hủy đơn PENDING/PAID phục hồi kho thành công, IDOR check hoạt động (người khác xem đơn bị 403).",
+        need:"Xong B1."
+      },
+      {
+        step: "B3",
+        t:"Scheduler tự động hủy đơn hết hạn [Task 19a]",
+        desc:"Tạo scheduler ngầm quét mỗi phút, tự động hủy các đơn PENDING quá 15 phút, giải phóng kho và hoàn trả voucher atomically.",
+        done:"Scheduler chạy ngầm hủy đơn chính xác sau 15m, khôi phục tồn kho sách.",
+        need:"Xong B2."
+      },
+      {
+        step: "B4",
+        t:"Quản lý Điểm thưởng (Loyalty Points) [Task 39]",
+        desc:"Cộng points & lifetime_points khi đơn thành công (10k VND = 1 point). Tiêu points tối đa 20% đơn hàng (1 point = 100 VND). Cấm kết hợp points + voucher. Database CHECK constraint points >= 0.",
+        done:"Cộng/trừ điểm chính xác, API GET /me/points trả lịch sử giao dịch điểm.",
+        need:"Xong B3 + Chờ P4 xong B1 (Voucher)."
+      }
+    ]
+  },
+  {
+    who:"P2",
+    icon:"📚",
+    color:"from-blue-500 to-cyan-500",
+    label:"Reviews & Ratings",
+    tasks:[
+      {
+        step: "B1",
+        t:"Viết đánh giá sách [Task 17]",
+        desc:"API POST /books/{id}/reviews cho phép user mua hàng đánh giá (1-5 sao). Giới hạn 1 review/user/sách. Khi tạo review mới, tự động tính lại rating_avg của sách.",
+        done:"Đánh giá sách thành công, rating_avg cập nhật đúng, trùng review trả 409.",
+        need:""
+      },
+      {
+        step: "B2",
+        t:"Xem & Xóa đánh giá [Task 17]",
+        desc:"Xem danh sách review của một cuốn sách (phân trang). User chỉ được xóa đánh giá của mình, ADMIN được quyền xóa bất kỳ đánh giá nào.",
+        done:"Xóa đánh giá của người khác bị chặn (403), ADMIN xóa OK.",
+        need:"Xong B1."
+      }
+    ]
+  },
+  {
+    who:"P5",
+    icon:"🤖",
+    color:"from-purple-500 to-fuchsia-500",
+    label:"AI Tích hợp & Ingestion nâng cao",
+    tasks:[
+      {
+        step: "B1",
+        t:"API Proxy Chat Spring Boot [Task 30, Task 40]",
+        desc:"API chat POST /ai/chat. Spring Boot lưu cuộc hội thoại vào DB PostgreSQL, gửi context 10 tin nhắn gần nhất tới service RAG Python, trả kết quả về cho FE.",
+        done:"Spring Boot gọi RAG lấy câu trả lời thành công, lưu đúng history.",
+        need:""
+      },
+      {
+        step: "B2",
+        t:"Chống Prompt Injection [Task 40]",
+        desc:"Tách biệt rõ ràng System Prompt và User Message. Lọc các từ khóa injection (ví dụ: 'ignore prior instructions', 'bỏ qua hướng dẫn trước'). Lọc nội dung đầu ra.",
+        done:"Chatbot từ chối/bỏ qua các câu lệnh phá hoại prompt chỉ dẫn.",
+        need:"Xong B1."
+      },
+      {
+        step: "B3",
+        t:"Gợi ý sách grounded [Task 31]",
+        desc:"Trích xuất gợi ý sách từ câu trả lời của RAG, đối chiếu với database PostgreSQL. Chỉ giới thiệu các sách active=true và còn hàng (stock > 0).",
+        done:"Gợi ý sách hiển thị đúng ID sách thực tế đang bán và còn hàng.",
+        need:"Xong B2."
+      },
+      {
+        step: "B4",
+        t:"Rate limit & Reindex Async [Task 32, Task 41]",
+        desc:"Áp dụng rate limit 20 request/phút/user cho chat (trả 429 nếu spam). Lắng nghe BookChangedEvent bất đồng bộ để trigger RAG reindex ngầm (retry backoff 3 lần).",
+        done:"Gọi chatbot quá nhanh trả về 429. Sửa sách ở admin -> Qdrant tự động cập nhật ngầm.",
+        need:"Xong B3 + Chờ P4 xong B2 (CRUD sách ở Phase 2)."
+      },
+      {
+        step: "B5",
+        t:"Nightly Reconciliation Job [Task 41]",
+        desc:"Tạo scheduled job chạy hàng đêm đối chiếu toàn bộ danh mục sách giữa Postgres và Qdrant để tự động bù/xóa các vector bị thiếu hoặc lỗi.",
+        done:"Job chạy không lỗi, đồng bộ hoàn chỉnh mọi lệch lạc dữ liệu.",
+        need:"Xong B4."
+      }
+    ]
+  },
+  {
+    who:"P1",
+    icon:"🔐",
+    color:"from-rose-500 to-pink-600",
+    label:"Hỗ trợ & Kiểm thử",
+    tasks:[
+      {
+        step: "B1",
+        t:"Kiểm thử tích hợp Auth & Profile",
+        desc:"Hỗ trợ viết test suite tích hợp cho toàn bộ luồng Auth, RBAC, và Quản lý Profile. Viết tài liệu Swagger chi tiết.",
+        done:"Các bài kiểm tra tự động chạy xanh, tài liệu API đầy đủ.",
+        need:""
+      }
+    ]
+  },
+  {
+    who:"P6",
+    icon:"🧭",
+    color:"from-slate-500 to-zinc-600",
+    label:"Hardening & Security",
+    tasks:[
+      {
+        step: "B1",
+        t:"Harden Security & Error Schema [Task 5, Task 33]",
+        desc:"Kiểm tra tất cả endpoint đảm bảo validation đúng (trả 400 và chi tiết lỗi), cấu hình CORS chặt chẽ, định dạng lỗi JSON thống nhất.",
+        done:"Mọi exception trả về đúng schema lỗi chung của hệ thống.",
+        need:""
+      }
+    ]
+  }
+];
+const orderedData=[...data].sort((a,b)=>Number(a.who.slice(1))-Number(b.who.slice(1)));
+document.getElementById("grid").innerHTML=orderedData.map(d=>`
+ <div>
+  <div class="bg-gradient-to-r ${d.color} text-white rounded-t-xl p-3 flex items-center gap-2">
+   <span class="text-lg">${d.icon}</span>
+   <div><div class="text-[10px] opacity-70">${d.who}</div><div class="font-bold text-sm">${d.label}</div></div>
+  </div>
+  <div class="card border-t-0 rounded-b-xl divide-y divide-white/5">
+   ${d.tasks.map((s,i)=>`
+    <label class="flex gap-3 p-3 cursor-pointer hover:bg-white/5 transition">
+     <input type="checkbox" class="chk mt-1 accent-emerald-400 shrink-0" data-k="p3_${d.who}${i}">
+     <span class="text-sm">
+      <span class="inline-block bg-white/10 text-white text-[10px] px-1.5 py-0.5 rounded font-bold mr-1">${s.step}</span>
+      <b class="text-white">${s.t}</b>
+      <div class="text-xs text-slate-300 mt-1"><b>Mô tả:</b> ${s.desc}</div>
+      <div class="text-xs text-emerald-400 mt-1"><b>Xong khi:</b> ${s.done}</div>
+      ${s.need?`<div class="text-xs text-amber-400 mt-1">⏳ <b>Điều kiện:</b> ${s.need}</div>`:""}
+     </span>
+    </label>`).join("")}
+  </div>
+ </div>`).join("");
+const boxes=document.querySelectorAll(".chk");
+boxes.forEach(b=>{b.checked=localStorage.getItem(b.dataset.k)==="1";b.onchange=()=>{localStorage.setItem(b.dataset.k,b.checked?"1":"0");pct();}});
+function pct(){const a=[...document.querySelectorAll(".chk")],d=a.filter(x=>x.checked).length;const p=Math.round(d/a.length*100);document.getElementById("pct").textContent=p+"%";document.getElementById("bar").style.width=p+"%";}
+pct();
+</script>
+</body>
+</html>

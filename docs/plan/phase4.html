@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Phase 4 — Ráp nối & Chạy thật</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+*{font-family:'Inter',sans-serif}
+body{background:#0f172a;color:#e2e8f0}
+.chk:checked+span{text-decoration:line-through;opacity:.5}
+.card{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);backdrop-filter:blur(10px)}
+.glow{box-shadow:0 0 40px rgba(16,185,129,.15)}
+</style>
+</head>
+<body>
+<div class="max-w-4xl mx-auto px-4 py-8">
+  <div class="flex items-center gap-3 mb-2">
+    <span class="bg-emerald-500/20 text-emerald-300 text-xs font-bold px-3 py-1 rounded-full">PHASE 4 — FINAL</span>
+    <span class="bg-rose-500/20 text-rose-300 text-xs font-bold px-3 py-1 rounded-full">CẢ NHÓM HỢP LỰC</span>
+  </div>
+  <h1 class="text-3xl font-800 text-white mb-1">🎯 Ráp nối & Chạy thật</h1>
+  <p class="text-slate-400 text-sm mb-6">Nối FE ↔ BE ↔ RAG. Deploy lên cloud. Test toàn bộ. Chuẩn bị demo.</p>
+
+  <div class="card rounded-xl p-3 mb-6 flex items-center gap-3">
+    <span class="text-sm">Tiến độ:</span>
+    <div class="flex-1 bg-slate-700 rounded-full h-2"><div id="bar" class="bg-gradient-to-r from-emerald-500 to-green-400 h-2 rounded-full transition-all" style="width:0%"></div></div>
+    <b id="pct" class="text-emerald-300">0%</b>
+  </div>
+
+  <div class="flex gap-2 mb-6 text-xs flex-wrap">
+    <a href="phase1.html" class="card px-3 py-1.5 rounded-lg text-slate-400 hover:text-white transition">← Phase 1</a>
+    <a href="phase2.html" class="card px-3 py-1.5 rounded-lg text-slate-400 hover:text-white transition">← Phase 2</a>
+    <a href="phase3.html" class="card px-3 py-1.5 rounded-lg text-slate-400 hover:text-white transition">← Phase 3</a>
+    <span class="bg-emerald-500/30 text-emerald-200 px-3 py-1.5 rounded-lg font-bold">Phase 4</span>
+    <a href="leader.html" class="bg-amber-500/20 text-amber-300 px-3 py-1.5 rounded-lg font-bold">Leader timeline</a>
+  </div>
+
+  <div class="space-y-4">
+    <!-- Tich hop -->
+    <div>
+      <div class="bg-gradient-to-r from-sky-500 to-blue-600 text-white rounded-t-xl p-3 flex items-center gap-2">
+        <span class="text-lg">🔗</span><b class="text-sm">Bước 1 — Tích hợp FE ↔ BE ↔ RAG</b>
+      </div>
+      <div class="card border-t-0 rounded-b-xl divide-y divide-white/5" id="s1"></div>
+    </div>
+    <!-- Deploy -->
+    <div>
+      <div class="bg-gradient-to-r from-violet-500 to-purple-600 text-white rounded-t-xl p-3 flex items-center gap-2">
+        <span class="text-lg">☁️</span><b class="text-sm">Bước 2 — Deploy lên Cloud</b>
+      </div>
+      <div class="card border-t-0 rounded-b-xl divide-y divide-white/5" id="s2"></div>
+    </div>
+    <!-- Test -->
+    <div>
+      <div class="bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-t-xl p-3 flex items-center gap-2">
+        <span class="text-lg">🧪</span><b class="text-sm">Bước 3 — Test & Sửa lỗi</b>
+      </div>
+      <div class="card border-t-0 rounded-b-xl divide-y divide-white/5" id="s3"></div>
+    </div>
+    <!-- Demo -->
+    <div>
+      <div class="bg-gradient-to-r from-emerald-500 to-green-500 text-white rounded-t-xl p-3 flex items-center gap-2">
+        <span class="text-lg">🎬</span><b class="text-sm">Bước 4 — Chuẩn bị Demo</b>
+      </div>
+      <div class="card border-t-0 rounded-b-xl divide-y divide-white/5" id="s4"></div>
+    </div>
+  </div>
+
+  <!-- Final -->
+  <div class="card glow rounded-xl p-5 mt-6 text-center">
+    <div class="text-2xl mb-2">🎉</div>
+    <b class="text-emerald-400 text-lg">Hoàn thành dự án khi:</b>
+    <p class="text-slate-300 text-sm mt-2">FE chạy trên Vercel · BE chạy trên Railway · RAG chạy OK · Đăng nhập → mua sách → thanh toán → chatbot hỏi sách — tất cả hoạt động liền mạch</p>
+    <div class="mt-3 text-xs text-slate-500">BookVerse — Nhóm 6 người 💪</div>
+  </div>
+</div>
+
+<script>
+const S1=[
+ {t:"React gọi được tất cả API backend [Task 34 setup]",who:"Cả nhóm FE + BE",desc:"Kết nối các màn hình của React với API Spring Boot thực tế (Đăng ký, Đăng nhập, Profile, Catalog, Giỏ hàng, Đơn hàng, Voucher).",done:"Mọi trang FE hoạt động đúng với dữ liệu từ DB PostgreSQL."},
+ {t:"Chatbot FE gửi tin nhắn và hiển thị phản hồi [Task 30, Task 34]",who:"P5 + FE Dev",desc:"Tích hợp khung chat trên FE gửi request đến API /ai/chat của Spring Boot proxy sang RAG Python.",done:"Khung chat hoạt động trơn tru end-to-end, hiển thị đúng nguồn trích dẫn."},
+ {t:"Admin FE quản lý nghiệp vụ và AI [Task 34]",who:"P4 + FE Dev",desc:"Kết nối trang Admin với API CRUD sách, danh mục, voucher, thay đổi role user, xem biểu đồ stats và theo dõi trạng thái reindex AI.",done:"Trang admin quản lý dữ liệu và cấu hình hệ thống thực tế thành công."},
+ {t:"Hệ thống đồng bộ RAG tự động khi thay đổi sách [Task 41]",who:"P5",desc:"Admin chỉnh sửa/soft-delete sách -> Spring Boot gửi BookChangedEvent ngầm -> RAG service tự động reindex vector.",done:"Chatbot cập nhật thông tin mới của sách lập tức sau khi thay đổi trên Admin."}
+];
+const S2=[
+ {t:"Deploy Spring Boot Backend lên Cloud [Task 34]",who:"P6 (Leader)",desc:"Deploy ứng dụng Spring Boot lên Railway hoặc Render, kết nối với Database PostgreSQL trên cloud.",done:"Gọi GET /health từ domain cloud trả về status 200."},
+ {t:"Deploy RAG Service & Vector DB [Task 34]",who:"P6 + P5",desc:"Deploy service Python lên cloud (Render), deploy Qdrant (Qdrant Cloud) và MongoDB (MongoDB Atlas) lên môi trường cloud thật.",done:"POST /query trên service deploy thật trả kết quả thành công."},
+ {t:"Deploy Frontend React [Task 34]",who:"FE Dev",desc:"Deploy ứng dụng React Frontend lên Vercel, cấu hình domain thật.",done:"Truy cập được website bookstore qua link deploy Vercel."},
+ {t:"Cấu hình bảo mật và biến môi trường [Task 33, Task 34]",who:"P6 (Leader)",desc:"Điền đầy đủ secrets/keys trên cloud (CORS cho domain Vercel, DB credentials, OpenAI key). Chặn hoàn toàn Swagger trên Production.",done:"FE gọi BE trên cloud không lỗi CORS, không lộ bất kỳ password hay key nào trên repo."}
+];
+const S3=[
+ {t:"Kiểm thử luồng nghiệp vụ chính [Verification]",who:"Cả nhóm",desc:"Test đầu cuối: Đăng ký user -> Đăng nhập -> Chọn sách -> Giỏ hàng -> Áp voucher -> Checkout -> Webhook thanh toán thành công.",done:"Mua sách thành công từ A-Z trên link deploy thật mà không xảy ra lỗi."},
+ {t:"Kiểm thử bảo mật & Chống IDOR [Task 37]",who:"P6 + P1",desc:"Thử truy cập URL đơn hàng/giỏ hàng của tài khoản khác xem có bị chặn 403 không. Thử gọi API Admin từ tài khoản CUSTOMER.",done:"Mọi nỗ lực bypass phân quyền đều bị trả lỗi 403/401 chuẩn JSON."},
+ {t:"Kiểm thử đồng thời & Tránh overselling [Task 35, Task 36]",who:"P6 + P3",desc:"Giả lập 2 hoặc nhiều người dùng đồng thời mua cuốn sách cuối cùng trong kho hoặc cùng áp dụng voucher giới hạn lượt dùng.",done:"Tồn kho không âm, voucher dùng không vượt quá usage_limit, pessimistic locking hoạt động tốt."},
+ {t:"Kiểm thử chatbot AI & Prompt injection [Task 38]",who:"P5",desc:"Test chatbot với các câu hỏi lừa dối instructions ('ignore instructions...', 'bỏ qua hướng dẫn trước'), test chatbot gợi ý sách hết hàng.",done:"Chatbot không bị hack prompt, chỉ gợi ý các sách còn hàng, hoạt động bình thường."}
+];
+const S4=[
+ {t:"Chuẩn bị cơ sở dữ liệu mẫu hoàn chỉnh",who:"P4 + P1",desc:"Nạp tối thiểu 12 cuốn sách thật với mô tả chi tiết, ảnh bìa thực tế, nạp các tài liệu sách PDF/EPUB thật vào vector store.",done:"Catalog hiển thị đẹp mắt, chatbot trả lời cực kỳ chính xác dựa trên tài liệu thật."},
+ {t:"Xây dựng kịch bản demo và phân vai thuyết trình",who:"Cả nhóm",desc:"Chuẩn bị kịch bản cụ thể: Ai demo luồng mua hàng, ai demo luồng Admin, ai demo chatbot AI. Chuẩn bị các câu hỏi tình huống của thầy cô.",done:"Mọi thành viên đều nắm rõ kịch bản và vai trò của mình."},
+ {t:"Tổng duyệt toàn bộ hệ thống trên cloud",who:"P6 (Leader)",desc:"Chạy thử toàn bộ kịch bản demo trên link deploy thật trước buổi thuyết trình.",done:"Hệ thống hoạt động mượt mà, phản hồi nhanh, sẵn sàng demo."}
+];
+function render(arr,el){
+ document.getElementById(el).innerHTML=arr.map((s,i)=>`
+  <label class="flex gap-3 p-3 cursor-pointer hover:bg-white/5 transition">
+   <input type="checkbox" class="chk mt-1 accent-emerald-400 shrink-0" data-k="${el}${i}">
+   <span class="text-sm">
+    <span class="inline-block bg-white/10 text-white text-[10px] px-1.5 py-0.5 rounded font-bold mr-1">B${i+1}</span>
+    <b class="text-white">${s.t}</b>
+    ${s.desc?`<div class="text-xs text-slate-300 mt-1"><b>Mô tả:</b> ${s.desc}</div>`:""}
+    <div class="text-xs text-emerald-400 mt-1"><b>Xong khi:</b> ${s.done}</div>
+    ${s.who?`<div class="text-xs text-amber-400 mt-1">👤 <b>Phân vai:</b> ${s.who}</div>`:""}
+   </span>
+  </label>`).join("");
+}
+render(S1,"s1");render(S2,"s2");render(S3,"s3");render(S4,"s4");
+const boxes=document.querySelectorAll(".chk");
+boxes.forEach(b=>{b.checked=localStorage.getItem(b.dataset.k)==="1";b.onchange=()=>{localStorage.setItem(b.dataset.k,b.checked?"1":"0");pct();}});
+function pct(){const a=[...document.querySelectorAll(".chk")],d=a.filter(x=>x.checked).length;const p=Math.round(d/a.length*100);document.getElementById("pct").textContent=p+"%";document.getElementById("bar").style.width=p+"%";}
+pct();
+</script>
+</body>
+</html>

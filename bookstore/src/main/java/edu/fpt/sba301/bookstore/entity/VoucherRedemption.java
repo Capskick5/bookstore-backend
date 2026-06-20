@@ -34,6 +34,11 @@ public class VoucherRedemption {
     private Order order;
 
     @NotNull
+    @ColumnDefault("'PENDING'")
+    @Column(name = "status", nullable = false, length = 20)
+    private String status = "PENDING";
+
+    @NotNull
     @ColumnDefault("now()")
     @Column(name = "created_at", nullable = false)
     private OffsetDateTime createdAt;

@@ -9,6 +9,25 @@ on:
 jobs:
   backend-test:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: bookverse
+          POSTGRES_USER: bookverse
+          POSTGRES_PASSWORD: bookverse
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U bookverse -d bookverse"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+    env:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/bookverse
+      SPRING_DATASOURCE_USERNAME: bookverse
+      SPRING_DATASOURCE_PASSWORD: bookverse
+      JWT_SECRET: ci-test-secret-ci-test-secret-ci-test-secret
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -21,17 +40,28 @@ jobs:
           cache: 'maven'
           cache-dependency-path: bookstore/pom.xml
 
-      - name: Check if Maven project exists
-        id: check_pom
-        run: |
-          if [ -f "backend/pom.xml" ]; then
-            echo "has_pom=true" >> $GITHUB_OUTPUT
-          else
-            echo "has_pom=false" >> $GITHUB_OUTPUT
-            echo "pom.xml not found. Skipping Maven build."
-          fi
-
       - name: Build and Test with Maven
-        if: steps.check_pom.outputs.has_pom == 'true'
-        run: mvn -B clean test
+        run: ./mvnw -B clean test
         working-directory: bookstore
+
+  rag-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Install RAG dependencies
+        run: uv sync --all-groups
+        working-directory: rag
+
+      - name: Test RAG service
+        run: uv run pytest
+        working-directory: rag
