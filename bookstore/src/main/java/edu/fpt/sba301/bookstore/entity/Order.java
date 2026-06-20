@@ -57,6 +57,10 @@ public class Order {
     @Column(name = "payment_method", nullable = false, length = 20)
     private String paymentMethod;
 
+    @Size(max = 255)
+    @Column(name = "payment_transaction_id", length = 255)
+    private String paymentTransactionId;
+
     @Size(max = 50)
     @Column(name = "voucher_code", length = 50)
     private String voucherCode;
@@ -75,10 +79,17 @@ public class Order {
     @Column(name = "idempotency_key", length = 100)
     private String idempotencyKey;
 
+    @Column(name = "expires_at")
+    private OffsetDateTime expiresAt;
+
     @NotNull
     @ColumnDefault("now()")
     @Column(name = "created_at", nullable = false)
     private OffsetDateTime createdAt;
 
+    @NotNull
+    @ColumnDefault("now()")
+    @Column(name = "updated_at", nullable = false)
+    private OffsetDateTime updatedAt;
 
 }

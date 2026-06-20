@@ -50,6 +50,11 @@ public class User {
     @Column(name = "points", nullable = false)
     private Long points;
 
+    @NotNull
+    @ColumnDefault("0")
+    @Column(name = "lifetime_points", nullable = false)
+    private Long lifetimePoints;
+
     @Size(max = 20)
     @NotNull
     @ColumnDefault("'SILVER'")

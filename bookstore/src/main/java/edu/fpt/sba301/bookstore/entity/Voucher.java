@@ -60,5 +60,9 @@ public class Voucher {
     @Column(name = "active", nullable = false)
     private Boolean active;
 
+    @NotNull
+    @ColumnDefault("0")
+    @Column(name = "used_count", nullable = false)
+    private Integer usedCount;
 
 }
