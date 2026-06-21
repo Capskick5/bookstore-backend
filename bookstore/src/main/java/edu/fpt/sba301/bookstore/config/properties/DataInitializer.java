@@ -29,7 +29,16 @@ public class DataInitializer implements CommandLineRunner {
     }
 
     private void seedUser(String email, String rawPassword, String fullName, String role, long points, boolean withAddress) {
-        if (userRepository.findByEmail(email).isPresent()) {
+        User existingUser = userRepository.findByEmail(email).orElse(null);
+        if (existingUser != null) {
+            existingUser.setPasswordHash(passwordEncoder.encode(rawPassword));
+            existingUser.setFullName(fullName);
+            existingUser.setRole(role);
+            existingUser.setEnabled(true);
+            userRepository.save(existingUser);
+            if (withAddress && addressRepository.findAllByUserId(existingUser.getId()).isEmpty()) {
+                seedAddress(existingUser);
+            }
             return;
         }
         User user = new User();
@@ -45,14 +54,18 @@ public class DataInitializer implements CommandLineRunner {
         user = userRepository.save(user);
 
         if (withAddress) {
-            Address address = new Address();
-            address.setUser(user);
-            address.setRecipient("Test User");
-            address.setPhone("0901234567");
-            address.setLine("123 Test Street");
-            address.setCity("Hanoi");
-            address.setIsDefault(true);
-            addressRepository.save(address);
+            seedAddress(user);
         }
+    }
+
+    private void seedAddress(User user) {
+        Address address = new Address();
+        address.setUser(user);
+        address.setRecipient("Test User");
+        address.setPhone("0901234567");
+        address.setLine("123 Test Street");
+        address.setCity("Hanoi");
+        address.setIsDefault(true);
+        addressRepository.save(address);
     }
 }
