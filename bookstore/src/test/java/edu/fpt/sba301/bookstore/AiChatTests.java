@@ -149,6 +149,20 @@ class AiChatTests {
                 .andExpect(jsonPath("$.data").isArray());
     }
 
+    @Test
+    void chatRecommendationsExcludeInactiveBooks() throws Exception {
+        String token = login("test@example.com", "password123");
+
+        mockMvc.perform(post("/api/ai/chat")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonMapper.writeValueAsString(
+                                new ChatRequest("Tell me about Inactive Book pricing", null))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.recommendations").isArray())
+                .andExpect(jsonPath("$.data.recommendations[?(@.title == 'Inactive Book')]").doesNotExist());
+    }
+
     private String login(String email, String password) throws Exception {
         var result = mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)

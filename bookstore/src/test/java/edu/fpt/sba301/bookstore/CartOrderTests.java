@@ -714,6 +714,89 @@ class CartOrderTests {
         assertTrue(refreshed.getLifetimePoints() >= 50L);
     }
 
+    @Test
+    void orderDetailPreservesPriceAndVoucherSnapshots() throws Exception {
+        addBookToCart(1);
+
+        MvcResult checkout = mockMvc.perform(post("/api/orders/checkout")
+                        .header("Authorization", "Bearer " + customerToken)
+                        .header("Idempotency-Key", uniqueIdempotencyKey("checkout-snapshot"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonMapper.writeValueAsString(
+                                new CheckoutRequest(addressId, "mock", "SAVE50K", null))))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.data.voucherCode").value("SAVE50K"))
+                .andExpect(jsonPath("$.data.items[0].titleSnapshot").value("Clean Code"))
+                .andExpect(jsonPath("$.data.items[0].unitPrice").value(350000))
+                .andReturn();
+
+        Number orderId = extractOrderId(checkout);
+
+        Book book = bookRepository.findById(bookId).orElseThrow();
+        book.setPrice(999999L);
+        bookRepository.save(book);
+
+        mockMvc.perform(get("/api/orders/" + orderId)
+                        .header("Authorization", "Bearer " + customerToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.voucherCode").value("SAVE50K"))
+                .andExpect(jsonPath("$.data.items[0].titleSnapshot").value("Clean Code"))
+                .andExpect(jsonPath("$.data.items[0].unitPrice").value(350000))
+                .andExpect(jsonPath("$.data.total").value(300000));
+    }
+
+    @Test
+    void cancelPendingOrderWithPointsRestoresBalance() throws Exception {
+        User customer = userRepository.findByEmail("test@example.com").orElseThrow();
+        long pointsBefore = customer.getPoints();
+
+        addBookToCart(1);
+        MvcResult checkout = mockMvc.perform(post("/api/orders/checkout")
+                        .header("Authorization", "Bearer " + customerToken)
+                        .header("Idempotency-Key", uniqueIdempotencyKey("checkout-cancel-points"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonMapper.writeValueAsString(
+                                new CheckoutRequest(addressId, "mock", null, 250L))))
+                .andExpect(status().isCreated())
+                .andReturn();
+        Number orderId = extractOrderId(checkout);
+
+        assertEquals(pointsBefore - 250, userRepository.findByEmail("test@example.com").orElseThrow().getPoints());
+
+        mockMvc.perform(post("/api/orders/" + orderId + "/cancel")
+                        .header("Authorization", "Bearer " + customerToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.status").value("CANCELLED"));
+
+        assertEquals(pointsBefore, userRepository.findByEmail("test@example.com").orElseThrow().getPoints());
+    }
+
+    @Test
+    void checkoutMoneyMathInvariantWithVoucherAndShipping() throws Exception {
+        addBookToCart(1);
+
+        MvcResult checkout = mockMvc.perform(post("/api/orders/checkout")
+                        .header("Authorization", "Bearer " + customerToken)
+                        .header("Idempotency-Key", uniqueIdempotencyKey("checkout-money-math"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonMapper.writeValueAsString(
+                                new CheckoutRequest(addressId, "mock", "PERCENT10", null))))
+                .andExpect(status().isCreated())
+                .andReturn();
+
+        Map<?, ?> data = (Map<?, ?>) jsonMapper.readValue(
+                checkout.getResponse().getContentAsString(), Map.class).get("data");
+        long subtotal = ((Number) data.get("subtotal")).longValue();
+        long discount = ((Number) data.get("discount")).longValue();
+        long shippingFee = ((Number) data.get("shippingFee")).longValue();
+        long total = ((Number) data.get("total")).longValue();
+
+        assertEquals(350000L, subtotal);
+        assertEquals(35000L, discount);
+        assertEquals(0L, shippingFee);
+        assertEquals(subtotal - discount + shippingFee, total);
+    }
+
     private String uniqueIdempotencyKey(String prefix) {
         return prefix + "-" + UUID.randomUUID();
     }
