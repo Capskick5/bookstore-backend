@@ -113,6 +113,7 @@ class CartOrderTests {
                 });
 
         User customer = userRepository.findByEmail("test@example.com").orElseThrow();
+        customer.setEnabled(true);
         customer.setPoints(50000L);
         customer.setLifetimePoints(50000L);
         userRepository.save(customer);
