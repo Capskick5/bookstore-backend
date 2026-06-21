@@ -63,10 +63,12 @@ public class AiChatServiceImpl implements AiChatService {
 
         String answer;
         List<SourceResponse> sources;
+        List<RagClient.RagSource> ragSources = List.of();
         var ragResult = ragClient.query(buildContextualQuery(conversation.getId(), request.message()));
         if (ragResult.isPresent()) {
             answer = ragResult.get().answer();
-            sources = ragResult.get().sources().stream()
+            ragSources = ragResult.get().sources() != null ? ragResult.get().sources() : List.of();
+            sources = ragSources.stream()
                     .map(src -> new SourceResponse(
                             src.document_name(),
                             src.document_name(),
@@ -79,7 +81,8 @@ public class AiChatServiceImpl implements AiChatService {
         }
 
         answer = chatOutputFilter.filter(answer);
-        List<BookRecommendationResponse> recommendations = findRecommendations(request.message(), answer);
+        List<BookRecommendationResponse> recommendations =
+                findRecommendations(request.message(), answer, ragSources);
         Message assistantMessage = saveMessage(conversation, "assistant", answer, sources);
 
         return new ChatResponse(
@@ -243,7 +246,36 @@ public class AiChatServiceImpl implements AiChatService {
         return "Tôi chưa kết nối được dịch vụ RAG hoặc chưa tìm thấy tài liệu phù hợp. Bạn có thể hỏi về sách, giao hàng, điểm thưởng hoặc voucher.";
     }
 
-    private List<BookRecommendationResponse> findRecommendations(String query, String answer) {
+    private List<BookRecommendationResponse> findRecommendations(
+            String query,
+            String answer,
+            List<RagClient.RagSource> ragSources) {
+        if (ragSources != null && !ragSources.isEmpty()) {
+            List<BookRecommendationResponse> fromSources = recommendationsFromSources(ragSources);
+            if (!fromSources.isEmpty()) {
+                return fromSources;
+            }
+        }
+        return findRecommendationsByKeywords(query, answer);
+    }
+
+    private List<BookRecommendationResponse> recommendationsFromSources(List<RagClient.RagSource> sources) {
+        Set<BookRecommendationResponse> results = new LinkedHashSet<>();
+        for (RagClient.RagSource source : sources) {
+            if (source.document_name() == null || source.document_name().isBlank()) {
+                continue;
+            }
+            bookRepository.searchActiveInStock(source.document_name(), PageRequest.of(0, 3)).stream()
+                    .map(this::toRecommendation)
+                    .forEach(results::add);
+            if (results.size() >= 5) {
+                break;
+            }
+        }
+        return results.stream().limit(5).toList();
+    }
+
+    private List<BookRecommendationResponse> findRecommendationsByKeywords(String query, String answer) {
         Set<BookRecommendationResponse> results = new LinkedHashSet<>();
         for (String keyword : extractKeywords(query + " " + answer)) {
             bookRepository.searchActiveInStock(keyword, PageRequest.of(0, 3)).stream()
