@@ -2,6 +2,7 @@ package edu.fpt.sba301.bookstore;
 
 import tools.jackson.databind.json.JsonMapper;
 import edu.fpt.sba301.bookstore.dto.request.BookRequest;
+import edu.fpt.sba301.bookstore.dto.request.CartItemRequest;
 import edu.fpt.sba301.bookstore.dto.request.CategoryRequest;
 import edu.fpt.sba301.bookstore.dto.request.LoginRequest;
 import edu.fpt.sba301.bookstore.dto.request.RegisterRequest;
@@ -11,6 +12,8 @@ import edu.fpt.sba301.bookstore.entity.Category;
 import edu.fpt.sba301.bookstore.entity.Order;
 import edu.fpt.sba301.bookstore.entity.OrderItem;
 import edu.fpt.sba301.bookstore.repository.BookRepository;
+import edu.fpt.sba301.bookstore.repository.CartItemRepository;
+import edu.fpt.sba301.bookstore.repository.CartRepository;
 import edu.fpt.sba301.bookstore.repository.CategoryRepository;
 import edu.fpt.sba301.bookstore.repository.OrderItemRepository;
 import edu.fpt.sba301.bookstore.repository.OrderRepository;
@@ -52,11 +55,18 @@ class AdminCatalogTests {
     private OrderRepository orderRepository;
 
     @Autowired
+    private CartItemRepository cartItemRepository;
+
+    @Autowired
+    private CartRepository cartRepository;
+
+    @Autowired
     private edu.fpt.sba301.bookstore.repository.UserRepository userRepository;
 
     private final JsonMapper jsonMapper = JsonMapper.builder().build();
     private String adminToken;
     private String customerToken;
+    private String customerEmail;
 
     @BeforeEach
     void setUp() throws Exception {
@@ -70,7 +80,7 @@ class AdminCatalogTests {
         adminToken = extractToken(adminResult);
 
         // Register a unique customer so this test does not depend on local seed history.
-        String customerEmail = "catalog-test-" + java.util.UUID.randomUUID() + "@example.com";
+        customerEmail = "catalog-test-" + java.util.UUID.randomUUID() + "@example.com";
         String customerPassword = "password123";
         RegisterRequest registerRequest = new RegisterRequest(customerEmail, customerPassword, "Catalog Test User");
         mockMvc.perform(post("/api/auth/register")
@@ -85,6 +95,15 @@ class AdminCatalogTests {
                 .andExpect(status().isOk())
                 .andReturn();
         customerToken = extractToken(customerResult);
+
+        bookRepository.findAll().stream()
+                .filter(b -> b.getTitle() != null
+                        && (b.getTitle().startsWith("Cart Cleanup")
+                        || b.getTitle().startsWith("Shelf Removal Demo")))
+                .forEach(b -> {
+                    b.setActive(false);
+                    bookRepository.save(b);
+                });
     }
 
     private String extractToken(MvcResult result) throws Exception {
@@ -341,6 +360,73 @@ class AdminCatalogTests {
         orderItemRepository.delete(orderItem);
         orderRepository.delete(order);
         bookRepository.delete(deletedBook);
+        categoryRepository.delete(category);
+    }
+
+    @Test
+    void testSoftDeleteRemovesBookFromCarts() throws Exception {
+        Category category = new Category();
+        category.setName("Cart Cleanup Cat " + java.util.UUID.randomUUID());
+        category.setSlug("cart-cleanup-cat-" + java.util.UUID.randomUUID());
+        category = categoryRepository.save(category);
+
+        Book book = new Book();
+        book.setTitle("Shelf Removal Demo " + java.util.UUID.randomUUID());
+        book.setAuthor("Author");
+        book.setCategory(category);
+        book.setPrice(100000L);
+        book.setStock(10);
+        book.setRatingAvg(BigDecimal.ZERO);
+        book.setSoldCount(0);
+        book.setActive(true);
+        book.setCreatedAt(OffsetDateTime.now());
+        book.setUpdatedAt(OffsetDateTime.now());
+        book = bookRepository.save(book);
+
+        mockMvc.perform(post("/api/cart/items")
+                        .header("Authorization", "Bearer " + customerToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonMapper.writeValueAsString(new CartItemRequest(book.getId(), 2))))
+                .andExpect(status().isOk());
+
+        var customer = userRepository.findByEmail(customerEmail).orElseThrow();
+        var cart = cartRepository.findByUserId(customer.getId()).orElseThrow();
+        assertFalse(cartItemRepository.findByCart(cart).isEmpty());
+
+        var admin = userRepository.findByEmail("admin@example.com").orElseThrow();
+        Order order = new Order();
+        order.setUser(admin);
+        order.setStatus("PENDING");
+        order.setSubtotal(100000L);
+        order.setDiscount(0L);
+        order.setShippingFee(30000L);
+        order.setTotal(130000L);
+        order.setAddressSnapshot("123 Main St");
+        order.setPaymentMethod("COD");
+        order.setPointsUsed(0L);
+        order.setPointsEarned(0L);
+        order.setCreatedAt(OffsetDateTime.now());
+        order.setUpdatedAt(OffsetDateTime.now());
+        order = orderRepository.save(order);
+
+        OrderItem orderItem = new OrderItem();
+        orderItem.setOrder(order);
+        orderItem.setBook(book);
+        orderItem.setTitleSnapshot(book.getTitle());
+        orderItem.setUnitPrice(book.getPrice());
+        orderItem.setQuantity(1);
+        orderItem = orderItemRepository.save(orderItem);
+
+        mockMvc.perform(delete("/api/admin/books/" + book.getId())
+                        .header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isOk());
+
+        var cartAfterDelete = cartRepository.findByUserId(customer.getId()).orElseThrow();
+        assertTrue(cartItemRepository.findByCart(cartAfterDelete).isEmpty());
+
+        orderItemRepository.delete(orderItem);
+        orderRepository.delete(order);
+        bookRepository.delete(bookRepository.findById(book.getId()).orElseThrow());
         categoryRepository.delete(category);
     }
 }

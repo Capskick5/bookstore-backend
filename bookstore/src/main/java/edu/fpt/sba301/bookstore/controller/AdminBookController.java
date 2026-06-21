@@ -142,7 +142,8 @@ public class AdminBookController {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Book not found"));
 
         if (orderItemRepository.existsByBookId(id)) {
-            // Soft-delete: active = false
+            // Soft-delete: remove from carts, then deactivate
+            cartItemRepository.deleteAllByBookId(id);
             book.setActive(false);
             book.setUpdatedAt(OffsetDateTime.now());
             bookRepository.save(book);
