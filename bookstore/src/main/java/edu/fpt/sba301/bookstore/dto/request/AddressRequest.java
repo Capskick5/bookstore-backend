@@ -1,21 +1,13 @@
 package edu.fpt.sba301.bookstore.dto.request;
 
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 
 public record AddressRequest(
-    @NotBlank(message = "Recipient name is required")
-    String recipient,
-
-    @NotBlank(message = "Phone number is required")
-    String phone,
-
-    @NotBlank(message = "Address line is required")
-    String line,
-
-    @NotBlank(message = "City is required")
-    String city,
-
-    @NotNull(message = "isDefault status is required")
-    Boolean isDefault
-) {}
+        @NotBlank @Size(max = 255) String recipient,
+        @NotBlank @Size(max = 20) String phone,
+        @NotBlank @Size(max = 255) String line,
+        @NotBlank @Size(max = 100) String city,
+        Boolean isDefault
+) {
+}

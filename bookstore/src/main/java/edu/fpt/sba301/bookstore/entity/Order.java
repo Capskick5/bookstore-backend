@@ -8,8 +8,6 @@ import lombok.Setter;
 import org.hibernate.annotations.ColumnDefault;
 
 import java.time.OffsetDateTime;
-import java.util.List;
-import java.util.ArrayList;
 
 @Getter
 @Setter
@@ -94,6 +92,9 @@ public class Order {
     @Column(name = "updated_at", nullable = false)
     private OffsetDateTime updatedAt;
 
-    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<OrderItem> orderItems = new ArrayList<>();
+    @NotNull
+    @ColumnDefault("false")
+    @Column(name = "manual_refund_required", nullable = false)
+    private Boolean manualRefundRequired = false;
+
 }

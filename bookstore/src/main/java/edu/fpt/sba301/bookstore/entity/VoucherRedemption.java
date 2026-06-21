@@ -2,6 +2,7 @@ package edu.fpt.sba301.bookstore.entity;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.ColumnDefault;
@@ -33,15 +34,15 @@ public class VoucherRedemption {
     @JoinColumn(name = "order_id", nullable = false)
     private Order order;
 
+    @Size(max = 20)
     @NotNull
     @ColumnDefault("'PENDING'")
     @Column(name = "status", nullable = false, length = 20)
-    private String status = "PENDING";
+    private String status;
 
     @NotNull
     @ColumnDefault("now()")
     @Column(name = "created_at", nullable = false)
     private OffsetDateTime createdAt;
-
 
 }

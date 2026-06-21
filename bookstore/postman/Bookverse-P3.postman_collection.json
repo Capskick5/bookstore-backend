@@ -1,0 +1,84 @@
+{
+  "info": {
+    "name": "Bookverse P3",
+    "description": "Import with Bookverse-Local environment. Swagger: {{baseUrl}}/swagger-ui",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Login Customer",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": ["pm.environment.set('accessToken', pm.response.json().data.accessToken);"],
+              "type": "text/javascript"
+            }
+          }],
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\"email\":\"{{customerEmail}}\",\"password\":\"{{customerPassword}}\"}"},
+            "url": "{{baseUrl}}/api/auth/login"
+          }
+        }
+      ]
+    },
+    {
+      "name": "P3 Flow",
+      "item": [
+        {
+          "name": "GET Addresses",
+          "request": {
+            "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{accessToken}}"}]},
+            "method": "GET",
+            "url": "{{baseUrl}}/api/auth/me/addresses"
+          }
+        },
+        {
+          "name": "POST Cart Item",
+          "request": {
+            "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{accessToken}}"}]},
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\"bookId\": {{bookId}}, \"quantity\": 1}"},
+            "url": "{{baseUrl}}/api/cart/items"
+          }
+        },
+        {
+          "name": "POST Checkout",
+          "event": [{
+            "listen": "prerequest",
+            "script": {"exec": ["pm.environment.set('idempotencyKey', 'postman-' + pm.variables.replaceIn('{{$guid}}'));"], "type": "text/javascript"}
+          }, {
+            "listen": "test",
+            "script": {
+              "exec": [
+                "const b = pm.response.json();",
+                "pm.environment.set('orderId', b.data.id);",
+                "pm.environment.set('paymentUrl', b.data.paymentUrl);"
+              ],
+              "type": "text/javascript"
+            }
+          }],
+          "request": {
+            "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{accessToken}}"}]},
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"},
+              {"key": "Idempotency-Key", "value": "{{idempotencyKey}}"}
+            ],
+            "body": {"mode": "raw", "raw": "{\"addressId\": {{addressId}}, \"paymentMethod\": \"mock\", \"voucherCode\": null, \"pointsToRedeem\": null}"},
+            "url": "{{baseUrl}}/api/orders/checkout"
+          }
+        },
+        {
+          "name": "GET Mock Webhook Pay",
+          "request": {"method": "GET", "url": "{{paymentUrl}}"}
+        }
+      ]
+    }
+  ]
+}

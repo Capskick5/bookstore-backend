@@ -190,7 +190,7 @@ class BookstoreApplicationTests {
         // 4. Delete address
         mockMvc.perform(delete("/api/auth/me/addresses/" + addressId)
                         .header("Authorization", "Bearer " + accessToken))
-                .andExpect(status().isOk());
+                .andExpect(status().isNoContent());
 
         // 5. Verify list is empty
         mockMvc.perform(get("/api/auth/me/addresses")

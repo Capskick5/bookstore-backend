@@ -19,12 +19,9 @@ import java.util.List;
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtTokenProvider jwtTokenProvider;
-    private final edu.fpt.sba301.bookstore.repository.UserRepository userRepository;
 
-    public JwtAuthenticationFilter(JwtTokenProvider jwtTokenProvider,
-                                   edu.fpt.sba301.bookstore.repository.UserRepository userRepository) {
+    public JwtAuthenticationFilter(JwtTokenProvider jwtTokenProvider) {
         this.jwtTokenProvider = jwtTokenProvider;
-        this.userRepository = userRepository;
     }
 
     @Override
@@ -40,21 +37,18 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             String username = jwtTokenProvider.extractUsername(token);
 
             if (jwtTokenProvider.validateToken(token)) {
-                edu.fpt.sba301.bookstore.entity.User user = userRepository.findByEmail(username).orElse(null);
-                if (user != null && Boolean.TRUE.equals(user.getEnabled())) {
-                    String role = jwtTokenProvider.extractRole(token);
+                String role = jwtTokenProvider.extractRole(token);
 
-                    // tạo GrantedAuthority từ role
-                    List<GrantedAuthority> authorities =
-                            Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + role));
+                // tạo GrantedAuthority từ role
+                List<GrantedAuthority> authorities =
+                        Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + role));
 
-                    UsernamePasswordAuthenticationToken authToken =
-                            new UsernamePasswordAuthenticationToken(username, null, authorities);
+                UsernamePasswordAuthenticationToken authToken =
+                        new UsernamePasswordAuthenticationToken(username, null, authorities);
 
-                    authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
-                    SecurityContextHolder.getContext().setAuthentication(authToken);
-                }
+                SecurityContextHolder.getContext().setAuthentication(authToken);
             }
         }
 
