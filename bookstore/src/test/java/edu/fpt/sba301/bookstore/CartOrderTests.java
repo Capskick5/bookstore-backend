@@ -96,9 +96,26 @@ class CartOrderTests {
                 .orElseThrow();
         bookId = book.getId();
         book.setStock(50);
+        book.setPrice(350000L);
+        book.setOriginalPrice(400000L);
+        book.setActive(true);
         bookRepository.save(book);
 
+        bookRepository.findAll().stream()
+                .filter(b -> "Atomic Habits".equals(b.getTitle()))
+                .findFirst()
+                .ifPresent(atomicHabits -> {
+                    atomicHabits.setPrice(280000L);
+                    atomicHabits.setOriginalPrice(320000L);
+                    atomicHabits.setStock(100);
+                    atomicHabits.setActive(true);
+                    bookRepository.save(atomicHabits);
+                });
+
         User customer = userRepository.findByEmail("test@example.com").orElseThrow();
+        customer.setPoints(50000L);
+        customer.setLifetimePoints(50000L);
+        userRepository.save(customer);
         addressId = addressRepository.findAllByUserId(customer.getId()).getFirst().getId();
 
         orderRepository.findByUserOrderByCreatedAtDesc(customer, Pageable.unpaged()).stream()
