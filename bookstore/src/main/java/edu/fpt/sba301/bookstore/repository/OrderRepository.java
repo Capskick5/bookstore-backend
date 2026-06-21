@@ -32,4 +32,18 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     @Query("SELECT o FROM Order o WHERE o.status = 'PENDING' AND LOWER(o.paymentMethod) <> 'cod' "
             + "AND o.expiresAt IS NOT NULL AND o.expiresAt < :now")
     List<Order> findExpiredPendingOrders(@Param("now") OffsetDateTime now);
+
+    @Query("""
+            SELECT COALESCE(SUM(o.total), 0) FROM Order o
+            WHERE o.status <> 'CANCELLED'
+              AND o.createdAt >= :start AND o.createdAt < :end
+            """)
+    Long sumRevenueBetween(@Param("start") OffsetDateTime start, @Param("end") OffsetDateTime end);
+
+    @Query("""
+            SELECT COUNT(o) FROM Order o
+            WHERE o.status <> 'CANCELLED'
+              AND o.createdAt >= :start AND o.createdAt < :end
+            """)
+    long countNonCancelledBetween(@Param("start") OffsetDateTime start, @Param("end") OffsetDateTime end);
 }
