@@ -22,4 +22,8 @@ public interface BookRepository extends JpaRepository<Book, Long> {
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("UPDATE Book b SET b.soldCount = b.soldCount + :qty WHERE b.id = :id")
     int incrementSoldCount(@Param("id") Long id, @Param("qty") int qty);
+
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("UPDATE Book b SET b.soldCount = b.soldCount - :qty WHERE b.id = :id AND b.soldCount >= :qty")
+    int decrementSoldCount(@Param("id") Long id, @Param("qty") int qty);
 }

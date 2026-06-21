@@ -7,7 +7,7 @@ import java.util.Map;
 public interface PaymentService {
     PaymentResponse createPaymentUrl(Order order, String returnUrl);
 
-    WebhookResult verifyWebhook(Map<String, String> params);
+    WebhookResult verifyWebhook(Map<String, String> params, Object requestBody);
 
     String getProviderName();
 }

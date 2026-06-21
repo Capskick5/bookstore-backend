@@ -16,6 +16,7 @@ public record OrderResponse(
         String paymentUrl,
         OffsetDateTime expiresAt,
         OffsetDateTime createdAt,
+        Boolean manualRefundRequired,
         List<OrderItemResponse> items
 ) {
 }

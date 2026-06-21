@@ -7,7 +7,7 @@ import edu.fpt.sba301.bookstore.payment.WebhookResult;
 import org.springframework.data.domain.Page;
 
 public interface OrderService {
-    OrderResponse checkout(User user, CheckoutRequest request, String idempotencyKey, String returnUrl);
+    CheckoutResult checkout(User user, CheckoutRequest request, String idempotencyKey, String returnUrl);
 
     OrderResponse handlePaymentWebhook(String provider, WebhookResult result);
 

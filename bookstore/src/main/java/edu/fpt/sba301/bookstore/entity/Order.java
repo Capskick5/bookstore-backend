@@ -92,4 +92,9 @@ public class Order {
     @Column(name = "updated_at", nullable = false)
     private OffsetDateTime updatedAt;
 
+    @NotNull
+    @ColumnDefault("false")
+    @Column(name = "manual_refund_required", nullable = false)
+    private Boolean manualRefundRequired = false;
+
 }
