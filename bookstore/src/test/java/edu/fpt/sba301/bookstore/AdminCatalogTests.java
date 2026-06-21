@@ -1,6 +1,6 @@
 package edu.fpt.sba301.bookstore;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import edu.fpt.sba301.bookstore.dto.request.BookRequest;
 import edu.fpt.sba301.bookstore.dto.request.CategoryRequest;
 import edu.fpt.sba301.bookstore.dto.request.LoginRequest;
@@ -53,7 +53,7 @@ class AdminCatalogTests {
     @Autowired
     private edu.fpt.sba301.bookstore.repository.UserRepository userRepository;
 
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final JsonMapper jsonMapper = JsonMapper.builder().build();
     private String adminToken;
     private String customerToken;
 
@@ -63,7 +63,7 @@ class AdminCatalogTests {
         LoginRequest adminLogin = new LoginRequest("admin@example.com", "adminpassword123");
         MvcResult adminResult = mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(adminLogin)))
+                        .content(jsonMapper.writeValueAsString(adminLogin)))
                 .andExpect(status().isOk())
                 .andReturn();
         adminToken = extractToken(adminResult);
@@ -72,7 +72,7 @@ class AdminCatalogTests {
         LoginRequest customerLogin = new LoginRequest("test@example.com", "password123");
         MvcResult customerResult = mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(customerLogin)))
+                        .content(jsonMapper.writeValueAsString(customerLogin)))
                 .andExpect(status().isOk())
                 .andReturn();
         customerToken = extractToken(customerResult);
@@ -80,7 +80,7 @@ class AdminCatalogTests {
 
     private String extractToken(MvcResult result) throws Exception {
         String body = result.getResponse().getContentAsString();
-        Map<?, ?> map = objectMapper.readValue(body, Map.class);
+        Map<?, ?> map = jsonMapper.readValue(body, Map.class);
         Map<?, ?> dataMap = (Map<?, ?>) map.get("data");
         return (String) dataMap.get("accessToken");
     }
@@ -106,14 +106,14 @@ class AdminCatalogTests {
         MvcResult createResult = mockMvc.perform(post("/api/admin/categories")
                         .header("Authorization", "Bearer " + adminToken)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(createReq)))
+                        .content(jsonMapper.writeValueAsString(createReq)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.data.name").value(uniqueName))
                 .andExpect(jsonPath("$.data.slug").exists())
                 .andReturn();
 
         String body = createResult.getResponse().getContentAsString();
-        Map<?, ?> map = objectMapper.readValue(body, Map.class);
+        Map<?, ?> map = jsonMapper.readValue(body, Map.class);
         Map<?, ?> data = (Map<?, ?>) map.get("data");
         Number categoryId = (Number) data.get("id");
 
@@ -121,7 +121,7 @@ class AdminCatalogTests {
         mockMvc.perform(post("/api/admin/categories")
                         .header("Authorization", "Bearer " + adminToken)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(createReq)))
+                        .content(jsonMapper.writeValueAsString(createReq)))
                 .andExpect(status().isConflict());
 
         // 3. Update category
@@ -130,7 +130,7 @@ class AdminCatalogTests {
         mockMvc.perform(put("/api/admin/categories/" + categoryId)
                         .header("Authorization", "Bearer " + adminToken)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(updateReq)))
+                        .content(jsonMapper.writeValueAsString(updateReq)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.name").value(updatedName));
 
@@ -192,14 +192,14 @@ class AdminCatalogTests {
         MvcResult createResult = mockMvc.perform(post("/api/admin/books")
                         .header("Authorization", "Bearer " + adminToken)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(createReq)))
+                        .content(jsonMapper.writeValueAsString(createReq)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.data.title").value("Test Title"))
                 .andExpect(jsonPath("$.data.price").value(150000))
                 .andReturn();
 
         String body = createResult.getResponse().getContentAsString();
-        Map<?, ?> map = objectMapper.readValue(body, Map.class);
+        Map<?, ?> map = jsonMapper.readValue(body, Map.class);
         Map<?, ?> data = (Map<?, ?>) map.get("data");
         Number bookId = (Number) data.get("id");
 
@@ -211,7 +211,7 @@ class AdminCatalogTests {
         mockMvc.perform(post("/api/admin/books")
                         .header("Authorization", "Bearer " + adminToken)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(invalidReq)))
+                        .content(jsonMapper.writeValueAsString(invalidReq)))
                 .andExpect(status().isBadRequest());
 
         // 3. Update Book
@@ -222,7 +222,7 @@ class AdminCatalogTests {
         mockMvc.perform(put("/api/admin/books/" + bookId)
                         .header("Authorization", "Bearer " + adminToken)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(updateReq)))
+                        .content(jsonMapper.writeValueAsString(updateReq)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.title").value("Updated Title"));
 
