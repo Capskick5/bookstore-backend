@@ -3,6 +3,8 @@ package edu.fpt.sba301.bookstore.repository;
 import edu.fpt.sba301.bookstore.entity.Order;
 import edu.fpt.sba301.bookstore.entity.OrderItem;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -14,4 +16,11 @@ public interface OrderItemRepository extends JpaRepository<OrderItem, Long> {
     List<OrderItem> findByOrder(Order order);
 
     List<OrderItem> findByOrderId(Long orderId);
+
+    @Query("""
+            SELECT COUNT(oi) > 0 FROM OrderItem oi
+            JOIN oi.order o
+            WHERE o.user.id = :userId AND oi.book.id = :bookId AND o.status = 'DELIVERED'
+            """)
+    boolean existsDeliveredPurchase(@Param("userId") Long userId, @Param("bookId") Long bookId);
 }

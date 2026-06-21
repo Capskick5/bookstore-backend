@@ -34,4 +34,12 @@ public interface BookRepository extends JpaRepository<Book, Long> {
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("UPDATE Book b SET b.soldCount = b.soldCount - :qty WHERE b.id = :id AND b.soldCount >= :qty")
     int decrementSoldCount(@Param("id") Long id, @Param("qty") int qty);
+
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("""
+            UPDATE Book b SET b.ratingAvg = (
+                SELECT COALESCE(AVG(r.rating), 0) FROM Review r WHERE r.book.id = :bookId
+            ) WHERE b.id = :bookId
+            """)
+    void recomputeRatingAvg(@Param("bookId") Long bookId);
 }
