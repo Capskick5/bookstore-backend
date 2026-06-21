@@ -139,6 +139,16 @@ class AiChatTests {
         }
     }
 
+    @Test
+    void adminCanViewReindexStatus() throws Exception {
+        String adminToken = login("admin@example.com", "adminpassword123");
+
+        mockMvc.perform(get("/api/admin/ai/reindex/status")
+                        .header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data").isArray());
+    }
+
     private String login(String email, String password) throws Exception {
         var result = mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
