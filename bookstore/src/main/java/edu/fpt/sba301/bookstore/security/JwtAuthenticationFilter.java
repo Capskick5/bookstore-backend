@@ -1,5 +1,7 @@
 package edu.fpt.sba301.bookstore.security;
 
+import edu.fpt.sba301.bookstore.entity.User;
+import edu.fpt.sba301.bookstore.repository.UserRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -19,9 +21,11 @@ import java.util.List;
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtTokenProvider jwtTokenProvider;
+    private final UserRepository userRepository;
 
-    public JwtAuthenticationFilter(JwtTokenProvider jwtTokenProvider) {
+    public JwtAuthenticationFilter(JwtTokenProvider jwtTokenProvider, UserRepository userRepository) {
         this.jwtTokenProvider = jwtTokenProvider;
+        this.userRepository = userRepository;
     }
 
     @Override
@@ -37,9 +41,17 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             String username = jwtTokenProvider.extractUsername(token);
 
             if (jwtTokenProvider.validateToken(token)) {
-                String role = jwtTokenProvider.extractRole(token);
+                User user = userRepository.findByEmail(username).orElse(null);
+                if (user == null || Boolean.FALSE.equals(user.getEnabled())) {
+                    response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                    response.setContentType("application/json");
+                    response.getWriter().write("""
+                            {"status":403,"error":"Forbidden","message":"Account disabled"}
+                            """);
+                    return;
+                }
 
-                // tạo GrantedAuthority từ role
+                String role = jwtTokenProvider.extractRole(token);
                 List<GrantedAuthority> authorities =
                         Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + role));
 
@@ -47,7 +59,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                         new UsernamePasswordAuthenticationToken(username, null, authorities);
 
                 authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-
                 SecurityContextHolder.getContext().setAuthentication(authToken);
             }
         }

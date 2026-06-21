@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.http.HttpStatus;
 
@@ -72,6 +73,12 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
     public void revoke(RefreshToken token) {
         token.setRevoked(true);
         refreshTokenRepository.save(token);
+    }
+
+    @Override
+    @Transactional
+    public void revokeAllForUser(User user) {
+        refreshTokenRepository.revokeAllByUser(user);
     }
 
     @Override

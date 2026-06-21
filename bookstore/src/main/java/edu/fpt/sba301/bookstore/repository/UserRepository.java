@@ -15,6 +15,9 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     boolean existsByEmail(String email);
 
+    org.springframework.data.domain.Page<User> findAllByOrderByCreatedAtDesc(
+            org.springframework.data.domain.Pageable pageable);
+
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("UPDATE User u SET u.points = u.points + :delta WHERE u.id = :id AND u.points + :delta >= 0")
     int adjustPoints(@Param("id") Long id, @Param("delta") long delta);
