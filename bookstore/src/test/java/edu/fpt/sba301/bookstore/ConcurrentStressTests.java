@@ -261,6 +261,8 @@ class ConcurrentStressTests {
         user.setFullName("Stress User " + index);
         user.setRole(Role.CUSTOMER.name());
         user.setEnabled(true);
+        user.setAuthProvider("LOCAL");
+        user.setEmailVerified(true);
         user.setPoints(0L);
         user.setLifetimePoints(0L);
         user.setTier("SILVER");

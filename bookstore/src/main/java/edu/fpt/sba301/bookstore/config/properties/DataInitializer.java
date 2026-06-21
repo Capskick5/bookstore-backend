@@ -35,6 +35,8 @@ public class DataInitializer implements CommandLineRunner {
             existingUser.setFullName(fullName);
             existingUser.setRole(role);
             existingUser.setEnabled(true);
+            existingUser.setEmailVerified(true);
+            existingUser.setAuthProvider("LOCAL");
             userRepository.save(existingUser);
             if (withAddress && addressRepository.findAllByUserId(existingUser.getId()).isEmpty()) {
                 seedAddress(existingUser);
@@ -47,6 +49,8 @@ public class DataInitializer implements CommandLineRunner {
         user.setFullName(fullName);
         user.setRole(role);
         user.setEnabled(true);
+        user.setAuthProvider("LOCAL");
+        user.setEmailVerified(true);
         user.setPoints(points);
         user.setLifetimePoints(points);
         user.setTier("SILVER");

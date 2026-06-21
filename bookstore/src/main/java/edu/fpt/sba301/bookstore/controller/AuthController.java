@@ -4,7 +4,9 @@ import edu.fpt.sba301.bookstore.dto.request.ChangePasswordRequest;
 import edu.fpt.sba301.bookstore.dto.request.LoginRequest;
 import edu.fpt.sba301.bookstore.dto.request.RefreshRequest;
 import edu.fpt.sba301.bookstore.dto.request.RegisterRequest;
+import edu.fpt.sba301.bookstore.dto.request.ResendRegistrationOtpRequest;
 import edu.fpt.sba301.bookstore.dto.request.UpdateProfileRequest;
+import edu.fpt.sba301.bookstore.dto.request.VerifyRegistrationRequest;
 import edu.fpt.sba301.bookstore.dto.response.ApiResponse;
 import edu.fpt.sba301.bookstore.dto.response.LoginResponse;
 import edu.fpt.sba301.bookstore.dto.response.ProfileResponse;
@@ -50,14 +52,34 @@ public class AuthController {
         return ResponseEntity.ok(response);
     }
 
-    @Operation(summary = "Register a new customer account")
+    @Operation(summary = "Start registration and send email verification code")
     @PostMapping("/register")
     public ResponseEntity<ApiResponse<Void>> register(@Valid @RequestBody RegisterRequest request) {
         authService.register(request);
         ApiResponse<Void> response = new ApiResponse<>();
+        response.setCode(200);
+        response.setMessage("Verification code sent to email");
+        return ResponseEntity.ok(response);
+    }
+
+    @Operation(summary = "Verify registration OTP and create account")
+    @PostMapping("/register/verify")
+    public ResponseEntity<ApiResponse<Void>> verifyRegistration(@Valid @RequestBody VerifyRegistrationRequest request) {
+        authService.verifyRegistration(request);
+        ApiResponse<Void> response = new ApiResponse<>();
         response.setCode(201);
         response.setMessage("Created");
         return ResponseEntity.status(201).body(response);
+    }
+
+    @Operation(summary = "Resend registration verification code")
+    @PostMapping("/register/resend")
+    public ResponseEntity<ApiResponse<Void>> resendRegistrationOtp(@Valid @RequestBody ResendRegistrationOtpRequest request) {
+        authService.resendRegistrationOtp(request.email());
+        ApiResponse<Void> response = new ApiResponse<>();
+        response.setCode(200);
+        response.setMessage("Verification code resent");
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/me")

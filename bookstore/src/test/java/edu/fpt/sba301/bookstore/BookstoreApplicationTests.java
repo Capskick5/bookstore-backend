@@ -1,18 +1,22 @@
 package edu.fpt.sba301.bookstore;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import edu.fpt.sba301.bookstore.auth.OtpMailSender;
 import edu.fpt.sba301.bookstore.dto.request.ChangePasswordRequest;
 import edu.fpt.sba301.bookstore.dto.request.LoginRequest;
 import edu.fpt.sba301.bookstore.dto.request.RegisterRequest;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -28,7 +32,16 @@ class BookstoreApplicationTests {
     @Autowired
     private MockMvc mockMvc;
 
+    @MockitoBean
+    private OtpMailSender otpMailSender;
+
     private final ObjectMapper objectMapper = new ObjectMapper();
+    private AtomicReference<String> lastOtp;
+
+    @BeforeEach
+    void setUpOtpCapture() {
+        lastOtp = AuthTestSupport.captureOtp(otpMailSender);
+    }
 
     @Test
     void contextLoads() {
@@ -53,11 +66,11 @@ class BookstoreApplicationTests {
 
         // 1. Register a new user
         RegisterRequest registerReq = new RegisterRequest(email, password, fullName);
-        mockMvc.perform(post("/api/auth/register")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(registerReq)))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.code").value(201));
+        AuthTestSupport.registerAndVerify(
+                mockMvc,
+                lastOtp,
+                registerReq,
+                objectMapper.writeValueAsString(registerReq));
 
         // 2. Login with registered user
         LoginRequest loginReq = new LoginRequest(email, password);
@@ -128,10 +141,11 @@ class BookstoreApplicationTests {
 
         // Register
         RegisterRequest registerReq = new RegisterRequest(email, password, "Address User");
-        mockMvc.perform(post("/api/auth/register")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(registerReq)))
-                .andExpect(status().isCreated());
+        AuthTestSupport.registerAndVerify(
+                mockMvc,
+                lastOtp,
+                registerReq,
+                objectMapper.writeValueAsString(registerReq));
 
         // Login
         LoginRequest loginReq = new LoginRequest(email, password);

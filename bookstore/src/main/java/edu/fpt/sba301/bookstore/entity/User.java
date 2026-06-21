@@ -65,6 +65,17 @@ public class User {
     @Column(name = "avatar_url", length = 500)
     private String avatarUrl;
 
+    @Size(max = 20)
+    @NotNull
+    @ColumnDefault("'LOCAL'")
+    @Column(name = "auth_provider", nullable = false, length = 20)
+    private String authProvider;
+
+    @NotNull
+    @ColumnDefault("false")
+    @Column(name = "email_verified", nullable = false)
+    private Boolean emailVerified;
+
     @NotNull
     @ColumnDefault("now()")
     @Column(name = "created_at", nullable = false)

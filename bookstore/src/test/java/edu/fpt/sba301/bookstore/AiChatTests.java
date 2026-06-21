@@ -1,6 +1,9 @@
 package edu.fpt.sba301.bookstore;
 
+import edu.fpt.sba301.bookstore.auth.OtpMailSender;
 import edu.fpt.sba301.bookstore.dto.request.ChatRequest;
+import edu.fpt.sba301.bookstore.dto.request.RegisterRequest;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -8,8 +11,11 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import tools.jackson.databind.json.JsonMapper;
+
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -26,6 +32,16 @@ class AiChatTests {
 
     @Autowired
     private JsonMapper jsonMapper;
+
+    @MockitoBean
+    private OtpMailSender otpMailSender;
+
+    private AtomicReference<String> lastOtp;
+
+    @BeforeEach
+    void captureOtp() {
+        lastOtp = AuthTestSupport.captureOtp(otpMailSender);
+    }
 
     @Test
     void authenticatedUserCanChat() throws Exception {
@@ -116,12 +132,12 @@ class AiChatTests {
         @Test
         void chatRateLimitReturns429() throws Exception {
             String email = "ratelimit-" + java.util.UUID.randomUUID() + "@example.com";
-            mockMvc.perform(post("/api/auth/register")
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(jsonMapper.writeValueAsString(
-                                    new edu.fpt.sba301.bookstore.dto.request.RegisterRequest(
-                                            email, "password123", "Rate Limit User"))))
-                    .andExpect(status().isCreated());
+            RegisterRequest registerRequest = new RegisterRequest(email, "password123", "Rate Limit User");
+            AuthTestSupport.registerAndVerify(
+                    mockMvc,
+                    lastOtp,
+                    registerRequest,
+                    jsonMapper.writeValueAsString(registerRequest));
 
             String token = login(email, "password123");
 

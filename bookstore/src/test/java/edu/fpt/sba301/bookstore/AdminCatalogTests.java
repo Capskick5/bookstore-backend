@@ -1,6 +1,7 @@
 package edu.fpt.sba301.bookstore;
 
 import tools.jackson.databind.json.JsonMapper;
+import edu.fpt.sba301.bookstore.auth.OtpMailSender;
 import edu.fpt.sba301.bookstore.dto.request.BookRequest;
 import edu.fpt.sba301.bookstore.dto.request.CartItemRequest;
 import edu.fpt.sba301.bookstore.dto.request.CategoryRequest;
@@ -23,12 +24,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -63,13 +66,19 @@ class AdminCatalogTests {
     @Autowired
     private edu.fpt.sba301.bookstore.repository.UserRepository userRepository;
 
+    @MockitoBean
+    private OtpMailSender otpMailSender;
+
     private final JsonMapper jsonMapper = JsonMapper.builder().build();
+    private AtomicReference<String> lastOtp;
     private String adminToken;
     private String customerToken;
     private String customerEmail;
 
     @BeforeEach
     void setUp() throws Exception {
+        lastOtp = AuthTestSupport.captureOtp(otpMailSender);
+
         // Get Admin token
         LoginRequest adminLogin = new LoginRequest("admin@example.com", "adminpassword123");
         MvcResult adminResult = mockMvc.perform(post("/api/auth/login")
@@ -83,10 +92,11 @@ class AdminCatalogTests {
         customerEmail = "catalog-test-" + java.util.UUID.randomUUID() + "@example.com";
         String customerPassword = "password123";
         RegisterRequest registerRequest = new RegisterRequest(customerEmail, customerPassword, "Catalog Test User");
-        mockMvc.perform(post("/api/auth/register")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(jsonMapper.writeValueAsString(registerRequest)))
-                .andExpect(status().isCreated());
+        AuthTestSupport.registerAndVerify(
+                mockMvc,
+                lastOtp,
+                registerRequest,
+                jsonMapper.writeValueAsString(registerRequest));
 
         LoginRequest customerLogin = new LoginRequest(customerEmail, customerPassword);
         MvcResult customerResult = mockMvc.perform(post("/api/auth/login")
