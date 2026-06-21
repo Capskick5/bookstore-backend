@@ -16,5 +16,7 @@ public interface AuthService {
 
     ProfileResponse updateProfile(String email, UpdateProfileRequest request);
 
+    ProfileResponse updateAvatar(String email, String avatarUrl);
+
     void changePassword(String email, ChangePasswordRequest request);
 }

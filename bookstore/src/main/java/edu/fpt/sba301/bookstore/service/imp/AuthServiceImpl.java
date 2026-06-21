@@ -106,6 +106,17 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     @Transactional
+    public ProfileResponse updateAvatar(String email, String avatarUrl) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+
+        user.setAvatarUrl(avatarUrl);
+        User saved = userRepository.save(user);
+        return mapToProfileResponse(saved);
+    }
+
+    @Override
+    @Transactional
     public void changePassword(String email, ChangePasswordRequest request) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
