@@ -1,0 +1,6 @@
+Clean Code
+Author: Robert C. Martin
+
+Clean Code teaches software professionals how to write readable, maintainable code.
+Key themes include meaningful names, small functions, and disciplined error handling.
+BookVerse carries this title for developers learning professional coding practices.

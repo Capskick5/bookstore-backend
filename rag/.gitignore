@@ -13,4 +13,7 @@ wheels/
 # Runtime data
 data/
 
-assets
+assets/*
+!assets/books/
+assets/books/*
+!assets/books/*.txt
