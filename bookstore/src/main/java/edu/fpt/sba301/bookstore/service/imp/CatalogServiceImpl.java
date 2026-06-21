@@ -16,6 +16,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 public class CatalogServiceImpl implements CatalogService {
@@ -61,6 +63,23 @@ public class CatalogServiceImpl implements CatalogService {
         Page<Book> books = bookRepository.findAll(spec, PageRequest.of(page, size, sortOrder));
 
         return PageResponse.from(books.map(bookMapper::toBookResponse));
+    }
+
+    @Override
+    public List<BookResponse> getRelatedBooks(Long bookId) {
+        Book book = bookRepository.findByIdAndActiveTrue(bookId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Book not found"));
+
+        if (book.getCategory() == null) {
+            return List.of();
+        }
+
+        return bookRepository
+                .findTop6ByCategory_IdAndActiveTrueAndIdNotOrderBySoldCountDescIdDesc(
+                        book.getCategory().getId(), book.getId())
+                .stream()
+                .map(bookMapper::toBookResponse)
+                .toList();
     }
 
     private String normalize(String value) {

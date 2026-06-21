@@ -31,6 +31,7 @@ public class CartMapper {
                     book.getId(),
                     book.getTitle(),
                     book.getAuthor(),
+                    book.getCoverUrl(),
                     unitPrice,
                     item.getQuantity(),
                     lineTotal,

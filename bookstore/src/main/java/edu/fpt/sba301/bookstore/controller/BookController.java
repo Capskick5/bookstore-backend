@@ -20,6 +20,8 @@ import org.springframework.web.bind.annotation.RestController;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/books")
 @RequiredArgsConstructor
@@ -63,5 +65,16 @@ public class BookController {
                     return ResponseEntity.ok(response);
                 })
                 .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    @Operation(summary = "List related books in the same category")
+    @GetMapping("/{id}/related")
+    public ResponseEntity<ApiResponse<List<BookResponse>>> getRelatedBooks(@PathVariable Long id) {
+        List<BookResponse> data = catalogService.getRelatedBooks(id);
+        ApiResponse<List<BookResponse>> response = new ApiResponse<>();
+        response.setCode(200);
+        response.setMessage("OK");
+        response.setData(data);
+        return ResponseEntity.ok(response);
     }
 }

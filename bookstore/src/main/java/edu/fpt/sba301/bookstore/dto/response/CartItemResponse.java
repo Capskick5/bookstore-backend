@@ -6,6 +6,7 @@ public record CartItemResponse(
         Long bookId,
         String title,
         String author,
+        String coverUrl,
         Long unitPrice,
         Integer quantity,
         Long lineTotal,

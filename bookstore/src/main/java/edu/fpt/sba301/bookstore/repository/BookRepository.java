@@ -29,6 +29,9 @@ public interface BookRepository extends JpaRepository<Book, Long>, JpaSpecificat
 
     Optional<Book> findByIdAndActiveTrue(Long id);
 
+    List<Book> findTop6ByCategory_IdAndActiveTrueAndIdNotOrderBySoldCountDescIdDesc(
+            Long categoryId, Long id);
+
     long countByActiveTrue();
 
     @Modifying(clearAutomatically = true, flushAutomatically = true)

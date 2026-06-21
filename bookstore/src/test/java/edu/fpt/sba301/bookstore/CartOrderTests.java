@@ -149,7 +149,8 @@ class CartOrderTests {
         mockMvc.perform(get("/api/cart")
                         .header("Authorization", "Bearer " + customerToken))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.items[0].unitPrice").value(350000));
+                .andExpect(jsonPath("$.data.items[0].unitPrice").value(350000))
+                .andExpect(jsonPath("$.data.items[0].coverUrl").exists());
 
         mockMvc.perform(put("/api/cart/items/" + bookId)
                         .header("Authorization", "Bearer " + customerToken)

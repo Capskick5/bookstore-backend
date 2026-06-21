@@ -214,7 +214,8 @@ class AdminCatalogTests {
         // 1. Create Book
         BookRequest createReq = new BookRequest(
                 "Test Title", "Test Author", category.getId(),
-                150000L, 200000L, 50, "Description", "http://cover.url", true
+                150000L, 200000L, 50, "Description", "http://cover.url",
+                null, null, null, null, null, true
         );
 
         MvcResult createResult = mockMvc.perform(post("/api/admin/books")
@@ -247,7 +248,8 @@ class AdminCatalogTests {
         // 2. Validate price=0 and stock=0 -> 400
         BookRequest invalidReq = new BookRequest(
                 "Test Title", "Test Author", category.getId(),
-                0L, 0L, 0, "Description", "http://cover.url", true
+                0L, 0L, 0, "Description", "http://cover.url",
+                null, null, null, null, null, true
         );
         mockMvc.perform(post("/api/admin/books")
                         .header("Authorization", "Bearer " + adminToken)
@@ -258,7 +260,8 @@ class AdminCatalogTests {
         // 3. Update Book
         BookRequest updateReq = new BookRequest(
                 "Updated Title", "Test Author", category.getId(),
-                180000L, 250000L, 40, "Updated Desc", "http://cover.url", true
+                180000L, 250000L, 40, "Updated Desc", "http://cover.url",
+                null, null, null, null, null, true
         );
         mockMvc.perform(put("/api/admin/books/" + bookId)
                         .header("Authorization", "Bearer " + adminToken)
@@ -269,7 +272,8 @@ class AdminCatalogTests {
 
         BookRequest hideReq = new BookRequest(
                 "Updated Title", "Test Author", category.getId(),
-                180000L, 250000L, 40, "Updated Desc", "http://cover.url", false
+                180000L, 250000L, 40, "Updated Desc", "http://cover.url",
+                null, null, null, null, null, false
         );
         mockMvc.perform(put("/api/admin/books/" + bookId)
                         .header("Authorization", "Bearer " + adminToken)

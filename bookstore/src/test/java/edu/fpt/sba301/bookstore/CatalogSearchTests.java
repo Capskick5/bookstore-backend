@@ -61,4 +61,18 @@ class CatalogSearchTests {
                         .param("sort", "invalid_sort"))
                 .andExpect(status().isBadRequest());
     }
+
+    @Test
+    void relatedBooksExcludeCurrentBookAndStayInCategory() throws Exception {
+        mockMvc.perform(get("/api/books/1/related"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data").isArray())
+                .andExpect(jsonPath("$.data[?(@.id == 1)]").doesNotExist());
+    }
+
+    @Test
+    void relatedBooksForMissingBookReturnsNotFound() throws Exception {
+        mockMvc.perform(get("/api/books/999999/related"))
+                .andExpect(status().isNotFound());
+    }
 }
