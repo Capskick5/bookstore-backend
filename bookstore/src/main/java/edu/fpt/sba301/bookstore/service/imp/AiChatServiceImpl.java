@@ -46,6 +46,7 @@ public class AiChatServiceImpl implements AiChatService {
     private final RagClient ragClient;
     private final PromptInjectionGuard promptInjectionGuard;
     private final ChatRateLimiter chatRateLimiter;
+    private final ChatOutputFilter chatOutputFilter;
 
     @Override
     @Transactional
@@ -77,6 +78,7 @@ public class AiChatServiceImpl implements AiChatService {
             sources = List.of();
         }
 
+        answer = chatOutputFilter.filter(answer);
         List<BookRecommendationResponse> recommendations = findRecommendations(request.message(), answer);
         Message assistantMessage = saveMessage(conversation, "assistant", answer, sources);
 
