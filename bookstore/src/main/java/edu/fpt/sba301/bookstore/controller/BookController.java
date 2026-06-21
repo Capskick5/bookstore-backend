@@ -6,12 +6,10 @@ import edu.fpt.sba301.bookstore.dto.response.CategoryResponse;
 import edu.fpt.sba301.bookstore.dto.response.PageResponse;
 import edu.fpt.sba301.bookstore.entity.Book;
 import edu.fpt.sba301.bookstore.repository.BookRepository;
+import edu.fpt.sba301.bookstore.service.CatalogService;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -27,19 +25,25 @@ import org.springframework.web.bind.annotation.RestController;
 public class BookController {
 
     private final BookRepository bookRepository;
+    private final CatalogService catalogService;
 
     @GetMapping
     public ResponseEntity<ApiResponse<PageResponse<BookResponse>>> getBooks(
+            @RequestParam(required = false) String q,
+            @RequestParam(required = false) Long categoryId,
+            @RequestParam(required = false) String author,
+            @RequestParam(required = false) Long minPrice,
+            @RequestParam(required = false) Long maxPrice,
+            @RequestParam(required = false, defaultValue = "title_asc") String sort,
             @RequestParam(defaultValue = "0") @Min(0) int page,
             @RequestParam(defaultValue = "10") @Min(1) @Max(50) int size) {
-        Page<BookResponse> books = bookRepository
-                .findAllByActiveTrue(PageRequest.of(page, size, Sort.by("id").descending()))
-                .map(this::mapToResponse);
+        PageResponse<BookResponse> data = catalogService.searchBooks(
+                q, categoryId, author, minPrice, maxPrice, sort, page, size);
 
         ApiResponse<PageResponse<BookResponse>> response = new ApiResponse<>();
         response.setCode(200);
         response.setMessage("OK");
-        response.setData(PageResponse.from(books));
+        response.setData(data);
         return ResponseEntity.ok(response);
     }
 
