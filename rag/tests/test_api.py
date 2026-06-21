@@ -69,6 +69,28 @@ def test_api_smoke_endpoints():
     assert query.status_code == 200
     assert query.json()["sources"][0]["file_name"] == "Sample.epub"
 
+def test_query_below_similarity_threshold_returns_not_in_kb_message():
+    class LowScoreStore:
+        collection_name = "books"
+
+        def is_available(self):
+            return True
+
+        def search(self, vector, limit):
+            return [SearchHit(id="chunk-1", score=0.1, payload={"content": "irrelevant"})]
+
+    app = create_app()
+    app.dependency_overrides[get_manifest] = lambda: FakeManifest()
+    app.dependency_overrides[get_store] = lambda: LowScoreStore()
+    client = TestClient(app)
+
+    response = client.post("/query", json={"query": "What is inside?", "top_k": 1})
+
+    assert response.status_code == 200
+    assert response.json()["sources"] == []
+    assert "knowledge base does not contain" in response.json()["answer"].lower()
+
+
 def test_v1_endpoints_are_not_public():
     app = create_app()
     app.dependency_overrides[get_manifest] = lambda: FakeManifest()

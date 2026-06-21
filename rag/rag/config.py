@@ -33,6 +33,7 @@ class Settings:
     default_top_k: int = int(os.getenv("DEFAULT_TOP_K", "5"))
     max_top_k: int = int(os.getenv("MAX_TOP_K", "20"))
     qdrant_query_limit: int = int(os.getenv("QDRANT_QUERY_LIMIT", "100"))
+    min_similarity_score: float = float(os.getenv("MIN_SIMILARITY_SCORE", "0.5"))
 
 
 settings = Settings()

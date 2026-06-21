@@ -1,8 +1,13 @@
 from __future__ import annotations
 
 from rag.config import settings
-from rag.schemas import QueryResponse, SearchHit, Source
+from rag.schemas import QueryResponse, SearchHit, Source, Usage
 from rag.services import FakeOpenAIService, MongoBookStore, QdrantStore
+
+MIN_SIMILARITY_SCORE = settings.min_similarity_score
+NOT_IN_KB_ANSWER = (
+    "The store knowledge base does not contain the requested information."
+)
 
 
 class RagEngine:
@@ -26,7 +31,14 @@ class RagEngine:
         vector = self.openai_service.embed_texts([query])[0]
         search_limit = settings.qdrant_query_limit if document_name else limit
         hits = self.store.search(vector=vector, limit=search_limit)
-        sources = self._sources_from_hits(hits, document_name=document_name)[:limit]
+        relevant_hits = [hit for hit in hits if hit.score >= MIN_SIMILARITY_SCORE]
+        sources = self._sources_from_hits(relevant_hits, document_name=document_name)[:limit]
+        if not sources:
+            return QueryResponse(
+                answer=NOT_IN_KB_ANSWER,
+                sources=[],
+                usage=Usage(),
+            )
         answer, usage = self.openai_service.make_answer(query, sources)
         return QueryResponse(answer=answer, sources=sources, usage=usage)
 
