@@ -14,15 +14,22 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 import java.util.HashMap;
 import java.util.Map;
+
+import static edu.fpt.sba301.bookstore.config.SwaggerConfig.BEARER_AUTH;
 
 @RestController
 @RequestMapping("/api/admin/orders")
 @PreAuthorize("hasRole('ADMIN')")
 @RequiredArgsConstructor
 @Validated
+@Tag(name = "Admin Orders", description = "Admin order management")
+@SecurityRequirement(name = BEARER_AUTH)
 public class AdminOrderController {
 
     private final OrderService orderService;
@@ -42,6 +49,7 @@ public class AdminOrderController {
         return ApiResponseSupport.ok(data);
     }
 
+    @Operation(summary = "Get full order detail for admin review")
     @GetMapping("/{id}")
     public ResponseEntity<?> getOrder(@PathVariable Long id) {
         AdminOrderResponse order = orderService.getAdminOrderDetail(id);

@@ -9,19 +9,21 @@ import org.springframework.context.annotation.Configuration;
 
 @Configuration
 public class SwaggerConfig {
+
+    public static final String BEARER_AUTH = "bearerAuth";
+
     @Bean
     public OpenAPI customOpenAPI() {
-        final String securitySchemeName = "bearerAuth";
         return new OpenAPI()
                 .info(new Info()
-                        .title("Spring Boot JWT API")
+                        .title("BookVerse API")
                         .version("1.0")
-                        .description("API Documentation with JWT Authentication"))
-                .addSecurityItem(new SecurityRequirement().addList(securitySchemeName))
+                        .description("BookVerse bookstore REST API documentation"))
+                .addSecurityItem(new SecurityRequirement().addList(BEARER_AUTH))
                 .components(new io.swagger.v3.oas.models.Components()
-                        .addSecuritySchemes(securitySchemeName,
+                        .addSecuritySchemes(BEARER_AUTH,
                                 new SecurityScheme()
-                                        .name(securitySchemeName)
+                                        .name(BEARER_AUTH)
                                         .type(SecurityScheme.Type.HTTP)
                                         .scheme("bearer")
                                         .bearerFormat("JWT")

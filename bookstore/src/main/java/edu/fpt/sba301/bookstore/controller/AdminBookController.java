@@ -20,17 +20,25 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.server.ResponseStatusException;
+
+import java.util.List;
+import java.util.stream.Collectors;
+
+import static edu.fpt.sba301.bookstore.config.SwaggerConfig.BEARER_AUTH;
 
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
-import java.util.List;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/admin/books")
 @PreAuthorize("hasRole('ADMIN')")
 @RequiredArgsConstructor
+@Tag(name = "Admin Catalog", description = "Admin book management")
+@SecurityRequirement(name = BEARER_AUTH)
 public class AdminBookController {
 
     private final BookRepository bookRepository;
@@ -39,6 +47,7 @@ public class AdminBookController {
     private final OrderItemRepository orderItemRepository;
     private final ApplicationEventPublisher eventPublisher;
 
+    @Operation(summary = "List all books for admin management")
     @GetMapping
     public ResponseEntity<ApiResponse<List<AdminBookResponse>>> getBooks() {
         List<AdminBookResponse> data = bookRepository.findAll().stream()
@@ -135,6 +144,7 @@ public class AdminBookController {
         return ResponseEntity.ok(response);
     }
 
+    @Operation(summary = "Soft-delete or hard-delete a book")
     @DeleteMapping("/{id}")
     @Transactional(isolation = Isolation.SERIALIZABLE)
     public ResponseEntity<ApiResponse<Void>> deleteBook(@PathVariable Long id) {

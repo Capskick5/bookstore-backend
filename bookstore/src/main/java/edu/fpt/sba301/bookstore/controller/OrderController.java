@@ -12,19 +12,27 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 import java.security.Principal;
 import java.util.HashMap;
 import java.util.Map;
 
+import static edu.fpt.sba301.bookstore.config.SwaggerConfig.BEARER_AUTH;
+
 @RestController
 @RequestMapping("/api/orders")
 @RequiredArgsConstructor
+@Tag(name = "Orders", description = "Checkout and order history")
+@SecurityRequirement(name = BEARER_AUTH)
 public class OrderController {
 
     private final OrderService orderService;
     private final CurrentUserService currentUserService;
 
+    @Operation(summary = "Checkout the current cart into a pending order")
     @PostMapping("/checkout")
     public ResponseEntity<ApiResponse<OrderResponse>> checkout(
             Principal principal,

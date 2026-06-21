@@ -22,17 +22,24 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 import java.security.Principal;
+
+import static edu.fpt.sba301.bookstore.config.SwaggerConfig.BEARER_AUTH;
 
 @RestController
 @RequestMapping("api/auth")
 @RequiredArgsConstructor
+@Tag(name = "Auth", description = "Registration, login, and profile")
 public class AuthController {
     private final AuthService authService;
     private final RefreshTokenService refreshTokenService;
     private final JwtTokenProvider jwtTokenProvider;
 
+    @Operation(summary = "Login with email and password")
     @PostMapping("/login")
     public ResponseEntity<ApiResponse<LoginResponse>> login(@Valid @RequestBody LoginRequest request) {
         LoginResponse tokens = authService.login(request);
@@ -43,6 +50,7 @@ public class AuthController {
         return ResponseEntity.ok(response);
     }
 
+    @Operation(summary = "Register a new customer account")
     @PostMapping("/register")
     public ResponseEntity<ApiResponse<Void>> register(@Valid @RequestBody RegisterRequest request) {
         authService.register(request);

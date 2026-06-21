@@ -10,17 +10,25 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 import java.security.Principal;
+
+import static edu.fpt.sba301.bookstore.config.SwaggerConfig.BEARER_AUTH;
 
 @RestController
 @RequestMapping("/api/cart")
 @RequiredArgsConstructor
+@Tag(name = "Cart", description = "Shopping cart operations")
+@SecurityRequirement(name = BEARER_AUTH)
 public class CartController {
 
     private final CartService cartService;
     private final CurrentUserService currentUserService;
 
+    @Operation(summary = "Get the current user's cart")
     @GetMapping
     public ResponseEntity<ApiResponse<CartResponse>> getCart(Principal principal) {
         CartResponse cart = cartService.getCart(currentUserService.requireUser(principal));

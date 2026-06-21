@@ -23,18 +23,26 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 import java.security.Principal;
+
+import static edu.fpt.sba301.bookstore.config.SwaggerConfig.BEARER_AUTH;
 
 @RestController
 @RequestMapping("/api/ai")
 @RequiredArgsConstructor
 @Validated
+@Tag(name = "AI Chat", description = "RAG chatbot conversations")
+@SecurityRequirement(name = BEARER_AUTH)
 public class AiController {
 
     private final AiChatService aiChatService;
     private final CurrentUserService currentUserService;
 
+    @Operation(summary = "Send a chat message and receive an AI answer")
     @PostMapping("/chat")
     public ResponseEntity<ApiResponse<ChatResponse>> chat(
             @Valid @RequestBody ChatRequest request,
