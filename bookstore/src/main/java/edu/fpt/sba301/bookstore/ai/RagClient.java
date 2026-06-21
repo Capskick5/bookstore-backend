@@ -5,8 +5,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.server.ResponseStatusException;
+import org.springframework.http.HttpStatus;
 
 import java.util.List;
 import java.util.Optional;
@@ -44,6 +47,11 @@ public class RagClient {
                 return Optional.empty();
             }
             return Optional.of(new RagQueryResult(response.answer(), response.sources()));
+        } catch (ResourceAccessException ex) {
+            log.warn("RAG query timed out: {}", ex.getMessage());
+            throw new ResponseStatusException(
+                    HttpStatus.GATEWAY_TIMEOUT,
+                    "The assistant is temporarily unavailable.");
         } catch (RestClientException ex) {
             log.warn("RAG query failed: {}", ex.getMessage());
             return Optional.empty();
