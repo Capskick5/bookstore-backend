@@ -289,15 +289,27 @@ class QdrantStore:
             return False
 
     def ensure_collection(self) -> None:
-        if self._collection_exists():
+        if not self._collection_exists():
+            self.client.create_collection(
+                collection_name=self.collection_name,
+                vectors_config=models.VectorParams(
+                    size=settings.embedding_dimension,
+                    distance=models.Distance.COSINE,
+                ),
+            )
+        self._ensure_book_id_index()
+
+    def _ensure_book_id_index(self) -> None:
+        if not self._collection_exists():
             return
-        self.client.create_collection(
-            collection_name=self.collection_name,
-            vectors_config=models.VectorParams(
-                size=settings.embedding_dimension,
-                distance=models.Distance.COSINE,
-            ),
-        )
+        try:
+            self.client.create_payload_index(
+                collection_name=self.collection_name,
+                field_name="book_id",
+                field_schema=models.PayloadSchemaType.KEYWORD,
+            )
+        except Exception:
+            pass
 
     def delete_points(self, point_ids: list[str]) -> None:
         if not point_ids or not self._collection_exists():
@@ -323,7 +335,7 @@ class QdrantStore:
                 models.PointStruct(
                     id=chunk.id,
                     vector=vector,
-                    payload={"content": chunk.text},
+                    payload={"content": chunk.text, **chunk.payload()},
                 )
                 for chunk, vector in batch
             ]

@@ -85,6 +85,7 @@ class TextChunk:
     chunk_index: int
     text: str
     page: int | None = None
+    book_id: str | None = None
 
     def payload(self) -> dict[str, object]:
         return _without_none(
@@ -95,6 +96,7 @@ class TextChunk:
                 "chunk_index": self.chunk_index,
                 "page": self.page,
                 "text": self.text,
+                "book_id": self.book_id,
             }
         )
 
@@ -130,7 +132,19 @@ class IngestionPipeline:
                 parsed = parse_book(path)
                 self.store.delete_points(old_chunk_ids)
 
-                chunks = chunk_document(parsed)
+                chunks = [
+                    TextChunk(
+                        id=chunk.id,
+                        document_name=chunk.document_name,
+                        file_name=chunk.file_name,
+                        file_type=chunk.file_type,
+                        chunk_index=chunk.chunk_index,
+                        text=chunk.text,
+                        page=chunk.page,
+                        book_id=book_id,
+                    )
+                    for chunk in chunk_document(parsed)
+                ]
                 vectors = self.openai_service.embed_texts([chunk.text for chunk in chunks])
                 self.store.upsert_chunks(chunks, vectors)
                 self.manifest.mark_indexed(path=path, parsed=parsed, chunks=chunks)

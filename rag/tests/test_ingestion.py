@@ -88,6 +88,7 @@ def test_reingesting_same_document_replaces_json_entry(monkeypatch, tmp_path: Pa
     assert second.total_chunks == 1
     assert len(manifest.indexed) == 2
     assert len(manifest.indexed[0]["chunks"]) == 1
+    assert manifest.indexed[0]["chunks"][0].book_id == "book-id"
     assert store.deleted == [["old-chunk"], ["old-chunk"]]
     assert len(store.upserts) == 2
     assert store.upserts[0][1] == [[1.0, 0.0]]
