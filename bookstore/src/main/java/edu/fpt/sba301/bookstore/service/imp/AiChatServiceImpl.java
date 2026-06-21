@@ -1,5 +1,6 @@
 package edu.fpt.sba301.bookstore.service.imp;
 
+import edu.fpt.sba301.bookstore.ai.ChatOutputFilter;
 import edu.fpt.sba301.bookstore.ai.ChatRateLimiter;
 import edu.fpt.sba301.bookstore.ai.PromptInjectionGuard;
 import edu.fpt.sba301.bookstore.ai.RagClient;
