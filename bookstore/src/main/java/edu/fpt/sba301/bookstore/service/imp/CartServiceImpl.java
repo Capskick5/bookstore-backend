@@ -1,12 +1,12 @@
 package edu.fpt.sba301.bookstore.service.imp;
 
 import edu.fpt.sba301.bookstore.dto.request.GuestCartItemRequest;
-import edu.fpt.sba301.bookstore.dto.response.CartItemResponse;
 import edu.fpt.sba301.bookstore.dto.response.CartResponse;
 import edu.fpt.sba301.bookstore.entity.Book;
 import edu.fpt.sba301.bookstore.entity.Cart;
 import edu.fpt.sba301.bookstore.entity.CartItem;
 import edu.fpt.sba301.bookstore.entity.User;
+import edu.fpt.sba301.bookstore.mapper.CartMapper;
 import edu.fpt.sba301.bookstore.repository.BookRepository;
 import edu.fpt.sba301.bookstore.repository.CartItemRepository;
 import edu.fpt.sba301.bookstore.repository.CartRepository;
@@ -17,7 +17,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -27,37 +26,25 @@ public class CartServiceImpl implements CartService {
     private final CartRepository cartRepository;
     private final CartItemRepository cartItemRepository;
     private final BookRepository bookRepository;
+    private final CartMapper cartMapper;
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional
     public CartResponse getCart(User user) {
         Cart cart = getOrCreateCart(user);
-        return toResponse(cart);
+        return cartMapper.toResponse(cart);
     }
 
     @Override
     @Transactional
     public CartResponse addItem(User user, Long bookId, int quantity) {
         Book book = findActiveBook(bookId);
-        validateQuantity(book, quantity);
         Cart cart = getOrCreateCart(user);
         CartItem item = cartItemRepository.findByCartAndBookId(cart, bookId).orElse(null);
-        int newQty = quantity;
-        if (item != null) {
-            newQty = item.getQuantity() + quantity;
-        }
-        validateQuantity(book, newQty);
-        if (item == null) {
-            item = new CartItem();
-            item.setCart(cart);
-            item.setBook(book);
-            item.setQuantity(newQty);
-            cartItemRepository.save(item);
-        } else {
-            item.setQuantity(newQty);
-            cartItemRepository.save(item);
-        }
-        return toResponse(cart);
+        int newQuantity = item == null ? quantity : item.getQuantity() + quantity;
+        validateQuantity(book, newQuantity);
+        upsertCartItem(cart, book, item, newQuantity);
+        return cartMapper.toResponse(cart);
     }
 
     @Override
@@ -70,7 +57,7 @@ public class CartServiceImpl implements CartService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Cart item not found"));
         item.setQuantity(quantity);
         cartItemRepository.save(item);
-        return toResponse(cart);
+        return cartMapper.toResponse(cart);
     }
 
     @Override
@@ -80,7 +67,7 @@ public class CartServiceImpl implements CartService {
         CartItem item = cartItemRepository.findByCartAndBookId(cart, bookId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Cart item not found"));
         cartItemRepository.delete(item);
-        return toResponse(cart);
+        return cartMapper.toResponse(cart);
     }
 
     @Override
@@ -89,40 +76,45 @@ public class CartServiceImpl implements CartService {
         if (guestItems == null || guestItems.isEmpty()) {
             return;
         }
+        Cart cart = getOrCreateCart(user);
         for (GuestCartItemRequest guestItem : guestItems) {
-            Book book = bookRepository.findById(guestItem.bookId()).orElse(null);
-            if (book == null || Boolean.FALSE.equals(book.getActive())) {
-                continue;
-            }
-            Cart cart = getOrCreateCart(user);
-            CartItem existing = cartItemRepository.findByCartAndBookId(cart, guestItem.bookId()).orElse(null);
-            int mergedQty = guestItem.quantity();
-            if (existing != null) {
-                mergedQty += existing.getQuantity();
-            }
-            mergedQty = Math.min(mergedQty, book.getStock());
-            if (mergedQty <= 0) {
-                continue;
-            }
-            if (existing == null) {
-                CartItem item = new CartItem();
-                item.setCart(cart);
-                item.setBook(book);
-                item.setQuantity(mergedQty);
-                cartItemRepository.save(item);
-            } else {
-                existing.setQuantity(mergedQty);
-                cartItemRepository.save(existing);
-            }
+            mergeGuestItem(cart, guestItem);
         }
     }
 
     @Override
     @Transactional
     public void clearCart(User user) {
-        cartRepository.findByUser(user).ifPresent(cart -> {
-            cartItemRepository.deleteByCart(cart);
-        });
+        cartRepository.findByUser(user).ifPresent(cartItemRepository::deleteByCart);
+    }
+
+    private void mergeGuestItem(Cart cart, GuestCartItemRequest guestItem) {
+        Book book = bookRepository.findById(guestItem.bookId()).orElse(null);
+        if (book == null || Boolean.FALSE.equals(book.getActive())) {
+            return;
+        }
+
+        CartItem existing = cartItemRepository.findByCartAndBookId(cart, guestItem.bookId()).orElse(null);
+        int mergedQuantity = guestItem.quantity() + (existing != null ? existing.getQuantity() : 0);
+        mergedQuantity = Math.min(mergedQuantity, book.getStock());
+        if (mergedQuantity <= 0) {
+            return;
+        }
+
+        upsertCartItem(cart, book, existing, mergedQuantity);
+    }
+
+    private void upsertCartItem(Cart cart, Book book, CartItem existingItem, int quantity) {
+        if (existingItem == null) {
+            CartItem item = new CartItem();
+            item.setCart(cart);
+            item.setBook(book);
+            item.setQuantity(quantity);
+            cartItemRepository.save(item);
+            return;
+        }
+        existingItem.setQuantity(quantity);
+        cartItemRepository.save(existingItem);
     }
 
     private Cart getOrCreateCart(User user) {
@@ -149,27 +141,5 @@ public class CartServiceImpl implements CartService {
         if (quantity > book.getStock()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Insufficient stock");
         }
-    }
-
-    CartResponse toResponse(Cart cart) {
-        List<CartItem> items = cartItemRepository.findByCart(cart);
-        List<CartItemResponse> responses = new ArrayList<>();
-        long subtotal = 0L;
-        for (CartItem item : items) {
-            Book book = item.getBook();
-            long unitPrice = book.getPrice();
-            long lineTotal = unitPrice * item.getQuantity();
-            subtotal += lineTotal;
-            responses.add(new CartItemResponse(
-                    book.getId(),
-                    book.getTitle(),
-                    book.getAuthor(),
-                    unitPrice,
-                    item.getQuantity(),
-                    lineTotal,
-                    book.getActive()
-            ));
-        }
-        return new CartResponse(responses, subtotal);
     }
 }

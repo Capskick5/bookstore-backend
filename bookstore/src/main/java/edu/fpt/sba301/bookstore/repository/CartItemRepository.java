@@ -3,7 +3,9 @@ package edu.fpt.sba301.bookstore.repository;
 import edu.fpt.sba301.bookstore.entity.Cart;
 import edu.fpt.sba301.bookstore.entity.CartItem;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -16,5 +18,7 @@ public interface CartItemRepository extends JpaRepository<CartItem, Long> {
 
     Optional<CartItem> findByCartAndBookId(Cart cart, Long bookId);
 
+    @Modifying
+    @Transactional
     void deleteByCart(Cart cart);
 }

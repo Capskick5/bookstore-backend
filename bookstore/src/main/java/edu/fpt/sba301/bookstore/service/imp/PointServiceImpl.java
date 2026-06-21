@@ -1,5 +1,7 @@
 package edu.fpt.sba301.bookstore.service.imp;
 
+import edu.fpt.sba301.bookstore.constant.LoyaltyConstants;
+import edu.fpt.sba301.bookstore.constant.PointTransactionReason;
 import edu.fpt.sba301.bookstore.dto.response.PointTransactionResponse;
 import edu.fpt.sba301.bookstore.dto.response.PointsResponse;
 import edu.fpt.sba301.bookstore.entity.Order;
@@ -8,9 +10,9 @@ import edu.fpt.sba301.bookstore.entity.User;
 import edu.fpt.sba301.bookstore.repository.PointTransactionRepository;
 import edu.fpt.sba301.bookstore.repository.UserRepository;
 import edu.fpt.sba301.bookstore.service.PointService;
+import edu.fpt.sba301.bookstore.support.PaginationSupport;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,20 +25,18 @@ import java.util.List;
 @RequiredArgsConstructor
 public class PointServiceImpl implements PointService {
 
-    private static final long VND_PER_POINT = 100L;
-
     private final UserRepository userRepository;
     private final PointTransactionRepository pointTransactionRepository;
 
     @Override
     public long calculateMaxRedeemablePoints(User user, long subtotal) {
-        long maxByPercent = (long) Math.floor(subtotal * 0.20 / VND_PER_POINT);
+        long maxByPercent = (long) Math.floor(subtotal * LoyaltyConstants.MAX_REDEEM_RATIO / LoyaltyConstants.VND_PER_POINT);
         return Math.min(user.getPoints(), maxByPercent);
     }
 
     @Override
     public long calculatePointsDiscount(long pointsToRedeem) {
-        return pointsToRedeem * VND_PER_POINT;
+        return pointsToRedeem * LoyaltyConstants.VND_PER_POINT;
     }
 
     @Override
@@ -53,13 +53,7 @@ public class PointServiceImpl implements PointService {
         if (updated == 0) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Insufficient points");
         }
-        PointTransaction tx = new PointTransaction();
-        tx.setUser(user);
-        tx.setOrder(order);
-        tx.setDelta(-pointsToRedeem);
-        tx.setReason("points_redeemed");
-        tx.setCreatedAt(OffsetDateTime.now());
-        pointTransactionRepository.save(tx);
+        saveTransaction(user, order, -pointsToRedeem, PointTransactionReason.POINTS_REDEEMED);
         user.setPoints(user.getPoints() - pointsToRedeem);
     }
 
@@ -69,34 +63,21 @@ public class PointServiceImpl implements PointService {
         if (order.getPointsUsed() == null || order.getPointsUsed() <= 0) {
             return;
         }
-        User user = order.getUser();
-        userRepository.adjustPoints(user.getId(), order.getPointsUsed());
-        PointTransaction tx = new PointTransaction();
-        tx.setUser(user);
-        tx.setOrder(order);
-        tx.setDelta(order.getPointsUsed());
-        tx.setReason("points_refunded");
-        tx.setCreatedAt(OffsetDateTime.now());
-        pointTransactionRepository.save(tx);
+        userRepository.adjustPoints(order.getUser().getId(), order.getPointsUsed());
+        saveTransaction(order.getUser(), order, order.getPointsUsed(), PointTransactionReason.POINTS_REFUNDED);
     }
 
     @Override
     @Transactional
     public void creditOnDelivered(Order order) {
-        long earned = order.getTotal() / 10000L;
+        long earned = order.getTotal() / LoyaltyConstants.POINTS_EARNED_VND_DIVISOR;
         if (earned <= 0) {
             return;
         }
         User user = order.getUser();
         userRepository.adjustPoints(user.getId(), earned);
         userRepository.adjustLifetimePoints(user.getId(), earned);
-        PointTransaction tx = new PointTransaction();
-        tx.setUser(user);
-        tx.setOrder(order);
-        tx.setDelta(earned);
-        tx.setReason("order_delivered");
-        tx.setCreatedAt(OffsetDateTime.now());
-        pointTransactionRepository.save(tx);
+        saveTransaction(user, order, earned, PointTransactionReason.ORDER_DELIVERED);
         order.setPointsEarned(earned);
     }
 
@@ -107,13 +88,7 @@ public class PointServiceImpl implements PointService {
             User user = order.getUser();
             userRepository.adjustPoints(user.getId(), -order.getPointsEarned());
             userRepository.adjustLifetimePoints(user.getId(), -order.getPointsEarned());
-            PointTransaction tx = new PointTransaction();
-            tx.setUser(user);
-            tx.setOrder(order);
-            tx.setDelta(-order.getPointsEarned());
-            tx.setReason("order_cancelled");
-            tx.setCreatedAt(OffsetDateTime.now());
-            pointTransactionRepository.save(tx);
+            saveTransaction(user, order, -order.getPointsEarned(), PointTransactionReason.ORDER_CANCELLED);
         }
         refundRedeemedPoints(order);
     }
@@ -121,26 +96,39 @@ public class PointServiceImpl implements PointService {
     @Override
     @Transactional(readOnly = true)
     public PointsResponse getPointsHistory(User user, int page, int size) {
-        int safePage = Math.max(page, 0);
-        int safeSize = Math.min(Math.max(size, 1), 50);
         Page<PointTransaction> result = pointTransactionRepository.findByUserOrderByCreatedAtDesc(
-                user, PageRequest.of(safePage, safeSize));
+                user, PaginationSupport.pageRequest(page, size));
         List<PointTransactionResponse> transactions = result.getContent().stream()
-                .map(tx -> new PointTransactionResponse(
-                        tx.getId(),
-                        tx.getDelta(),
-                        tx.getReason(),
-                        tx.getOrder() != null ? tx.getOrder().getId() : null,
-                        tx.getCreatedAt()))
+                .map(this::toTransactionResponse)
                 .toList();
         User refreshed = userRepository.findById(user.getId()).orElse(user);
         return new PointsResponse(
                 refreshed.getPoints(),
                 transactions,
-                safePage,
-                safeSize,
+                PaginationSupport.normalizePage(page),
+                PaginationSupport.normalizeSize(size),
                 result.getTotalElements(),
                 result.getTotalPages()
+        );
+    }
+
+    private void saveTransaction(User user, Order order, long delta, String reason) {
+        PointTransaction transaction = new PointTransaction();
+        transaction.setUser(user);
+        transaction.setOrder(order);
+        transaction.setDelta(delta);
+        transaction.setReason(reason);
+        transaction.setCreatedAt(OffsetDateTime.now());
+        pointTransactionRepository.save(transaction);
+    }
+
+    private PointTransactionResponse toTransactionResponse(PointTransaction transaction) {
+        return new PointTransactionResponse(
+                transaction.getId(),
+                transaction.getDelta(),
+                transaction.getReason(),
+                transaction.getOrder() != null ? transaction.getOrder().getId() : null,
+                transaction.getCreatedAt()
         );
     }
 }
