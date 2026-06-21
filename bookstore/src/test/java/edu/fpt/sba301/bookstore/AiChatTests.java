@@ -1,11 +1,13 @@
 package edu.fpt.sba301.bookstore;
 
 import edu.fpt.sba301.bookstore.dto.request.ChatRequest;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import tools.jackson.databind.json.JsonMapper;
 
@@ -105,6 +107,36 @@ class AiChatTests {
         mockMvc.perform(post("/api/admin/ai/reindex")
                         .header("Authorization", "Bearer " + customerToken))
                 .andExpect(status().isForbidden());
+    }
+
+    @Nested
+    @TestPropertySource(properties = "app.ai.rate-limit-per-minute=1")
+    class RateLimitExceeded {
+
+        @Test
+        void chatRateLimitReturns429() throws Exception {
+            String email = "ratelimit-" + java.util.UUID.randomUUID() + "@example.com";
+            mockMvc.perform(post("/api/auth/register")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(jsonMapper.writeValueAsString(
+                                    new edu.fpt.sba301.bookstore.dto.request.RegisterRequest(
+                                            email, "password123", "Rate Limit User"))))
+                    .andExpect(status().isCreated());
+
+            String token = login(email, "password123");
+
+            mockMvc.perform(post("/api/ai/chat")
+                            .header("Authorization", "Bearer " + token)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(jsonMapper.writeValueAsString(new ChatRequest("First message", null))))
+                    .andExpect(status().isOk());
+
+            mockMvc.perform(post("/api/ai/chat")
+                            .header("Authorization", "Bearer " + token)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(jsonMapper.writeValueAsString(new ChatRequest("Second message", null))))
+                    .andExpect(status().isTooManyRequests());
+        }
     }
 
     private String login(String email, String password) throws Exception {
