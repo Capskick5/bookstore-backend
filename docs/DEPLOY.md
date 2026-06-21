@@ -9,6 +9,17 @@ Use this checklist when deploying BookVerse to production.
 3. Run Flyway migrations against the production PostgreSQL instance.
 4. Verify `GET /api/health` returns `status: UP` and database `UP`.
 
+### Cloudinary (cover images + avatars)
+
+1. Create a free account at [Cloudinary](https://cloudinary.com).
+2. From the Cloudinary dashboard, copy **Cloud name**, **API Key**, and **API Secret**.
+3. Set on the backend host (Railway / Docker):
+   - `CLOUDINARY_CLOUD_NAME`
+   - `CLOUDINARY_API_KEY`
+   - `CLOUDINARY_API_SECRET`
+4. Upload folders used by the app: `bookverse/covers`, `bookverse/avatars`.
+5. If these variables are missing, `POST /api/admin/media/cover` and `POST /api/auth/me/avatar` return **503**; admins can still paste image URLs manually in the catalog form.
+
 ## RAG service (FastAPI)
 
 1. Build from `rag/Dockerfile`.
