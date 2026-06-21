@@ -1,0 +1,36 @@
+name: Deploy Smoke Test
+
+on:
+  workflow_dispatch:
+    inputs:
+      api_base_url:
+        description: Backend base URL (without /api suffix)
+        required: true
+        default: http://localhost:8080
+
+jobs:
+  smoke-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Health check
+        run: |
+          API="${{ github.event.inputs.api_base_url }}"
+          echo "Checking ${API}/api/health"
+          curl --fail --retry 5 --retry-delay 3 --retry-all-errors \
+            "${API}/api/health" | tee health.json
+          python - <<'PY'
+          import json, sys
+          data = json.load(open("health.json"))
+          assert data.get("status") == "UP", data
+          assert data.get("db", {}).get("status") == "UP", data
+          print("Smoke test passed")
+          PY
+
+      - name: Public catalog check
+        run: |
+          API="${{ github.event.inputs.api_base_url }}"
+          curl --fail --retry 3 --retry-delay 2 \
+            "${API}/api/books?page=0&size=1"
