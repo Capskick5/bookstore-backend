@@ -234,6 +234,12 @@ public class OrderServiceImpl implements OrderService {
             return orderMapper.toResponse(order, null);
         }
 
+        if (OrderStatus.DELIVERED.equals(order.getStatus()) && OrderStatus.CANCELLED.equals(targetStatus)) {
+            cancelDeliveredOrderInternal(order, "admin_refund_after_delivered");
+            log.info("Admin cancelled delivered order id={}", orderId);
+            return orderMapper.toResponse(order, null);
+        }
+
         throw new ResponseStatusException(HttpStatus.CONFLICT,
                 "Invalid status transition from " + order.getStatus() + " to " + targetStatus);
     }
@@ -478,6 +484,23 @@ public class OrderServiceImpl implements OrderService {
         order.setManualRefundRequired(true);
         order.setUpdatedAt(OffsetDateTime.now());
         orderRepository.save(order);
+    }
+
+    private void cancelDeliveredOrderInternal(Order order, String reason) {
+        if (OrderStatus.CANCELLED.equals(order.getStatus())) {
+            return;
+        }
+        List<OrderItem> items = orderItemRepository.findByOrder(order);
+        for (OrderItem item : items) {
+            bookRepository.restoreStock(item.getBook().getId(), item.getQuantity());
+            bookRepository.decrementSoldCount(item.getBook().getId(), item.getQuantity());
+        }
+        releaseVoucher(order);
+        pointService.debitOnCancelAfterDelivered(order);
+        order.setStatus(OrderStatus.CANCELLED);
+        order.setUpdatedAt(OffsetDateTime.now());
+        orderRepository.save(order);
+        log.info("Cancelled delivered order id={} reason={}", order.getId(), reason);
     }
 
     private void cancelOrderInternal(Order order, String reason) {

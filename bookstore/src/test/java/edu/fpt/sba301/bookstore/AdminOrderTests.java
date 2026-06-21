@@ -1,10 +1,14 @@
 package edu.fpt.sba301.bookstore;
 
 import tools.jackson.databind.json.JsonMapper;
+import edu.fpt.sba301.bookstore.constant.LoyaltyConstants;
 import edu.fpt.sba301.bookstore.dto.request.CartItemRequest;
 import edu.fpt.sba301.bookstore.dto.request.CheckoutRequest;
 import edu.fpt.sba301.bookstore.dto.request.LoginRequest;
 import edu.fpt.sba301.bookstore.dto.request.UpdateOrderStatusRequest;
+import edu.fpt.sba301.bookstore.entity.Book;
+import edu.fpt.sba301.bookstore.entity.Order;
+import edu.fpt.sba301.bookstore.entity.User;
 import edu.fpt.sba301.bookstore.enums.OrderStatus;
 import edu.fpt.sba301.bookstore.repository.AddressRepository;
 import edu.fpt.sba301.bookstore.repository.BookRepository;
@@ -24,6 +28,8 @@ import org.springframework.test.web.servlet.MvcResult;
 import java.util.Map;
 import java.util.UUID;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -70,6 +76,8 @@ class AdminOrderTests {
                 .getId();
 
         var customer = userRepository.findByEmail("test@example.com").orElseThrow();
+        customer.setEnabled(true);
+        userRepository.save(customer);
         addressId = addressRepository.findAllByUserId(customer.getId()).getFirst().getId();
         cartService.clearCart(customer);
 
@@ -128,6 +136,66 @@ class AdminOrderTests {
                         .header("Authorization", "Bearer " + customerToken))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.status").value(OrderStatus.DELIVERED));
+    }
+
+    @Test
+    void adminRefundCancelAfterDeliveredReversesPointsAndRestoresStock() throws Exception {
+        User customer = userRepository.findByEmail("test@example.com").orElseThrow();
+        long pointsBefore = customer.getPoints();
+        Book book = bookRepository.findById(bookId).orElseThrow();
+        int stockBefore = book.getStock();
+        int soldBefore = book.getSoldCount();
+
+        mockMvc.perform(post("/api/cart/items")
+                        .header("Authorization", "Bearer " + customerToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonMapper.writeValueAsString(new CartItemRequest(bookId, 1))))
+                .andExpect(status().isOk());
+
+        CheckoutRequest checkout = new CheckoutRequest(addressId, "cod", null, null);
+        MvcResult checkoutResult = mockMvc.perform(post("/api/orders/checkout")
+                        .header("Authorization", "Bearer " + customerToken)
+                        .header("Idempotency-Key", "refund-flow-" + UUID.randomUUID())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonMapper.writeValueAsString(checkout)))
+                .andExpect(status().isCreated())
+                .andReturn();
+        Number orderId = extractOrderId(checkoutResult);
+
+        mockMvc.perform(post("/api/admin/orders/" + orderId + "/confirm")
+                        .header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(patch("/api/admin/orders/" + orderId + "/status")
+                        .header("Authorization", "Bearer " + adminToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonMapper.writeValueAsString(new UpdateOrderStatusRequest(OrderStatus.SHIPPED))))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(patch("/api/admin/orders/" + orderId + "/status")
+                        .header("Authorization", "Bearer " + adminToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonMapper.writeValueAsString(new UpdateOrderStatusRequest(OrderStatus.DELIVERED))))
+                .andExpect(status().isOk());
+
+        User afterDelivered = userRepository.findByEmail("test@example.com").orElseThrow();
+        Order deliveredOrder = orderRepository.findById(orderId.longValue()).orElseThrow();
+        long expectedEarned = deliveredOrder.getTotal() / LoyaltyConstants.POINTS_EARNED_VND_DIVISOR;
+        assertEquals(pointsBefore + expectedEarned, afterDelivered.getPoints());
+
+        mockMvc.perform(patch("/api/admin/orders/" + orderId + "/status")
+                        .header("Authorization", "Bearer " + adminToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonMapper.writeValueAsString(new UpdateOrderStatusRequest(OrderStatus.CANCELLED))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.status").value(OrderStatus.CANCELLED));
+
+        Book restored = bookRepository.findById(bookId).orElseThrow();
+        assertEquals(stockBefore, restored.getStock());
+        assertEquals(soldBefore, restored.getSoldCount());
+
+        User afterCancel = userRepository.findByEmail("test@example.com").orElseThrow();
+        assertEquals(pointsBefore, afterCancel.getPoints());
     }
 
     @Test
