@@ -47,3 +47,9 @@ app:
       api-key: ${PAYOS_API_KEY:}
       checksum-key: ${PAYOS_CHECKSUM_KEY:}
       cancel-url: ${APP_PAYMENT_PAYOS_CANCEL_URL:http://localhost:3000/payment/cancel}
+  rag:
+    base-url: ${APP_RAG_BASE_URL:http://localhost:8000}
+    timeout-ms: ${APP_RAG_TIMEOUT_MS:15000}
+    enabled: ${APP_RAG_ENABLED:true}
+  ai:
+    rate-limit-per-minute: ${APP_AI_RATE_LIMIT_PER_MINUTE:20}
