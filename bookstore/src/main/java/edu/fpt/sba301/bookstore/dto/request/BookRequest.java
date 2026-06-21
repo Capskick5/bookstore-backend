@@ -33,5 +33,20 @@ public record BookRequest(
         @Size(max = 500, message = "Cover URL must not exceed 500 characters")
         String coverUrl,
 
+        @Size(max = 20, message = "ISBN must not exceed 20 characters")
+        String isbn,
+
+        @Size(max = 255, message = "Publisher must not exceed 255 characters")
+        String publisher,
+
+        @Min(value = 1000, message = "Published year must be 1000 or later")
+        Integer publishedYear,
+
+        @Min(value = 1, message = "Page count must be at least 1")
+        Integer pageCount,
+
+        @Size(max = 50, message = "Language must not exceed 50 characters")
+        String language,
+
         Boolean active
 ) {}

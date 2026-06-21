@@ -2,8 +2,8 @@ package edu.fpt.sba301.bookstore.controller;
 
 import edu.fpt.sba301.bookstore.dto.response.ApiResponse;
 import edu.fpt.sba301.bookstore.dto.response.BookResponse;
-import edu.fpt.sba301.bookstore.dto.response.CategoryResponse;
 import edu.fpt.sba301.bookstore.dto.response.PageResponse;
+import edu.fpt.sba301.bookstore.mapper.BookMapper;
 import edu.fpt.sba301.bookstore.entity.Book;
 import edu.fpt.sba301.bookstore.repository.BookRepository;
 import edu.fpt.sba301.bookstore.service.CatalogService;
@@ -29,6 +29,7 @@ public class BookController {
 
     private final BookRepository bookRepository;
     private final CatalogService catalogService;
+    private final BookMapper bookMapper;
 
     @Operation(summary = "Search and list active books")
     @GetMapping
@@ -58,31 +59,9 @@ public class BookController {
                     ApiResponse<BookResponse> response = new ApiResponse<>();
                     response.setCode(200);
                     response.setMessage("OK");
-                    response.setData(mapToResponse(book));
+                    response.setData(bookMapper.toBookResponse(book));
                     return ResponseEntity.ok(response);
                 })
                 .orElseGet(() -> ResponseEntity.notFound().build());
-    }
-
-    private BookResponse mapToResponse(Book book) {
-        CategoryResponse category = book.getCategory() == null
-                ? null
-                : new CategoryResponse(
-                        book.getCategory().getId(),
-                        book.getCategory().getName(),
-                        book.getCategory().getSlug());
-
-        return new BookResponse(
-                book.getId(),
-                book.getTitle(),
-                book.getAuthor(),
-                category,
-                book.getPrice(),
-                book.getOriginalPrice(),
-                book.getStock(),
-                book.getDescription(),
-                book.getCoverUrl(),
-                book.getRatingAvg(),
-                book.getSoldCount());
     }
 }

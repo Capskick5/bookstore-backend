@@ -151,7 +151,8 @@ public class AuthServiceImpl implements AuthService {
                 user.getRole(),
                 user.getPoints(),
                 tier,
-                user.getLifetimePoints()
+                user.getLifetimePoints(),
+                user.getAvatarUrl()
         );
     }
 }

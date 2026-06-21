@@ -61,6 +61,10 @@ public class User {
     @Column(name = "tier", nullable = false, length = 20)
     private String tier;
 
+    @Size(max = 500)
+    @Column(name = "avatar_url", length = 500)
+    private String avatarUrl;
+
     @NotNull
     @ColumnDefault("now()")
     @Column(name = "created_at", nullable = false)

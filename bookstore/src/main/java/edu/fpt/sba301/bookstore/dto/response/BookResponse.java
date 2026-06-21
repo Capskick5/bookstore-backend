@@ -12,6 +12,11 @@ public record BookResponse(
         Integer stock,
         String description,
         String coverUrl,
+        String isbn,
+        String publisher,
+        Integer publishedYear,
+        Integer pageCount,
+        String language,
         BigDecimal ratingAvg,
         Integer soldCount
 ) {

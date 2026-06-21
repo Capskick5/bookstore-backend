@@ -1,9 +1,9 @@
 package edu.fpt.sba301.bookstore.service.imp;
 
 import edu.fpt.sba301.bookstore.dto.response.BookResponse;
-import edu.fpt.sba301.bookstore.dto.response.CategoryResponse;
 import edu.fpt.sba301.bookstore.dto.response.PageResponse;
 import edu.fpt.sba301.bookstore.entity.Book;
+import edu.fpt.sba301.bookstore.mapper.BookMapper;
 import edu.fpt.sba301.bookstore.repository.BookRepository;
 import edu.fpt.sba301.bookstore.repository.BookSpecifications;
 import edu.fpt.sba301.bookstore.service.CatalogService;
@@ -21,6 +21,7 @@ import org.springframework.web.server.ResponseStatusException;
 public class CatalogServiceImpl implements CatalogService {
 
     private final BookRepository bookRepository;
+    private final BookMapper bookMapper;
 
     @Override
     public PageResponse<BookResponse> searchBooks(
@@ -59,7 +60,7 @@ public class CatalogServiceImpl implements CatalogService {
 
         Page<Book> books = bookRepository.findAll(spec, PageRequest.of(page, size, sortOrder));
 
-        return PageResponse.from(books.map(this::mapToResponse));
+        return PageResponse.from(books.map(bookMapper::toBookResponse));
     }
 
     private String normalize(String value) {
@@ -81,27 +82,5 @@ public class CatalogServiceImpl implements CatalogService {
             case "rating_desc" -> Sort.by("ratingAvg").descending();
             default -> throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid sort parameter");
         };
-    }
-
-    private BookResponse mapToResponse(Book book) {
-        CategoryResponse category = book.getCategory() == null
-                ? null
-                : new CategoryResponse(
-                        book.getCategory().getId(),
-                        book.getCategory().getName(),
-                        book.getCategory().getSlug());
-
-        return new BookResponse(
-                book.getId(),
-                book.getTitle(),
-                book.getAuthor(),
-                category,
-                book.getPrice(),
-                book.getOriginalPrice(),
-                book.getStock(),
-                book.getDescription(),
-                book.getCoverUrl(),
-                book.getRatingAvg(),
-                book.getSoldCount());
     }
 }

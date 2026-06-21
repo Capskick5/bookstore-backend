@@ -53,6 +53,24 @@ public class Book {
     @Column(name = "cover_url", length = 500)
     private String coverUrl;
 
+    @Size(max = 20)
+    @Column(name = "isbn", length = 20)
+    private String isbn;
+
+    @Size(max = 255)
+    @Column(name = "publisher", length = 255)
+    private String publisher;
+
+    @Column(name = "published_year")
+    private Integer publishedYear;
+
+    @Column(name = "page_count")
+    private Integer pageCount;
+
+    @Size(max = 50)
+    @Column(name = "language", length = 50)
+    private String language;
+
     @NotNull
     @ColumnDefault("0")
     @Column(name = "rating_avg", nullable = false, precision = 2, scale = 1)

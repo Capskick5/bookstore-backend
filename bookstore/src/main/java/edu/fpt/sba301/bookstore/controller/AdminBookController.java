@@ -7,6 +7,7 @@ import edu.fpt.sba301.bookstore.dto.response.CategoryResponse;
 import edu.fpt.sba301.bookstore.entity.Book;
 import edu.fpt.sba301.bookstore.entity.Category;
 import edu.fpt.sba301.bookstore.event.BookChangedEvent;
+import edu.fpt.sba301.bookstore.mapper.BookMapper;
 import edu.fpt.sba301.bookstore.repository.BookRepository;
 import edu.fpt.sba301.bookstore.repository.CartItemRepository;
 import edu.fpt.sba301.bookstore.repository.CategoryRepository;
@@ -46,12 +47,13 @@ public class AdminBookController {
     private final CartItemRepository cartItemRepository;
     private final OrderItemRepository orderItemRepository;
     private final ApplicationEventPublisher eventPublisher;
+    private final BookMapper bookMapper;
 
     @Operation(summary = "List all books for admin management")
     @GetMapping
     public ResponseEntity<ApiResponse<List<AdminBookResponse>>> getBooks() {
         List<AdminBookResponse> data = bookRepository.findAll().stream()
-                .map(this::mapToResponse)
+                .map(bookMapper::toAdminBookResponse)
                 .collect(Collectors.toList());
 
         ApiResponse<List<AdminBookResponse>> response = new ApiResponse<>();
@@ -75,14 +77,8 @@ public class AdminBookController {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Category not found"));
 
         Book book = new Book();
-        book.setTitle(request.title());
-        book.setAuthor(request.author());
+        applyBookRequest(book, request);
         book.setCategory(category);
-        book.setPrice(request.price());
-        book.setOriginalPrice(request.originalPrice());
-        book.setStock(request.stock());
-        book.setDescription(request.description());
-        book.setCoverUrl(request.coverUrl());
         book.setRatingAvg(BigDecimal.ZERO);
         book.setSoldCount(0);
         book.setActive(request.active() != null ? request.active() : true);
@@ -97,7 +93,7 @@ public class AdminBookController {
         ApiResponse<AdminBookResponse> response = new ApiResponse<>();
         response.setCode(201);
         response.setMessage("Created");
-        response.setData(mapToResponse(saved));
+        response.setData(bookMapper.toAdminBookResponse(saved));
 
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
@@ -118,14 +114,8 @@ public class AdminBookController {
         Category category = categoryRepository.findById(request.categoryId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Category not found"));
 
-        book.setTitle(request.title());
-        book.setAuthor(request.author());
         book.setCategory(category);
-        book.setPrice(request.price());
-        book.setOriginalPrice(request.originalPrice());
-        book.setStock(request.stock());
-        book.setDescription(request.description());
-        book.setCoverUrl(request.coverUrl());
+        applyBookRequest(book, request);
         if (request.active() != null) {
             book.setActive(request.active());
         }
@@ -139,7 +129,7 @@ public class AdminBookController {
         ApiResponse<AdminBookResponse> response = new ApiResponse<>();
         response.setCode(200);
         response.setMessage("OK");
-        response.setData(mapToResponse(saved));
+        response.setData(bookMapper.toAdminBookResponse(saved));
 
         return ResponseEntity.ok(response);
     }
@@ -176,28 +166,25 @@ public class AdminBookController {
         return ResponseEntity.ok(response);
     }
 
-    private AdminBookResponse mapToResponse(Book book) {
-        CategoryResponse categoryResponse = null;
-        if (book.getCategory() != null) {
-            categoryResponse = new CategoryResponse(
-                    book.getCategory().getId(),
-                    book.getCategory().getName(),
-                    book.getCategory().getSlug());
+    private void applyBookRequest(Book book, BookRequest request) {
+        book.setTitle(request.title());
+        book.setAuthor(request.author());
+        book.setPrice(request.price());
+        book.setOriginalPrice(request.originalPrice());
+        book.setStock(request.stock());
+        book.setDescription(request.description());
+        book.setCoverUrl(request.coverUrl());
+        book.setIsbn(normalizeOptional(request.isbn()));
+        book.setPublisher(normalizeOptional(request.publisher()));
+        book.setPublishedYear(request.publishedYear());
+        book.setPageCount(request.pageCount());
+        book.setLanguage(normalizeOptional(request.language()));
+    }
+
+    private String normalizeOptional(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
         }
-        return new AdminBookResponse(
-                book.getId(),
-                book.getTitle(),
-                book.getAuthor(),
-                categoryResponse,
-                book.getPrice(),
-                book.getOriginalPrice(),
-                book.getStock(),
-                book.getDescription(),
-                book.getCoverUrl(),
-                book.getRatingAvg(),
-                book.getSoldCount(),
-                book.getActive(),
-                book.getCreatedAt(),
-                book.getUpdatedAt());
+        return value.trim();
     }
 }

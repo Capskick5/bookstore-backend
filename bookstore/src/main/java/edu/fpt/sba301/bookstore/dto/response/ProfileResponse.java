@@ -7,5 +7,6 @@ public record ProfileResponse(
     String role,
     Long points,
     String tier,
-    Long lifetimePoints
+    Long lifetimePoints,
+    String avatarUrl
 ) {}
