@@ -21,6 +21,7 @@ import edu.fpt.sba301.bookstore.service.CartService;
 import edu.fpt.sba301.bookstore.service.CheckoutResult;
 import edu.fpt.sba301.bookstore.service.OrderService;
 import edu.fpt.sba301.bookstore.service.PointService;
+import edu.fpt.sba301.bookstore.service.VoucherService;
 import edu.fpt.sba301.bookstore.support.PaginationSupport;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -53,6 +54,7 @@ public class OrderServiceImpl implements OrderService {
     private final VoucherRepository voucherRepository;
     private final VoucherRedemptionRepository voucherRedemptionRepository;
     private final PointService pointService;
+    private final VoucherService voucherService;
     private final PaymentServiceFactory paymentServiceFactory;
     private final UserRepository userRepository;
     private final OrderMapper orderMapper;
@@ -60,12 +62,6 @@ public class OrderServiceImpl implements OrderService {
 
     @Value("${app.order.stock-hold-minutes:15}")
     private int stockHoldMinutes;
-
-    @Value("${app.order.shipping-fee:30000}")
-    private long shippingFeeFlat;
-
-    @Value("${app.order.free-shipping-threshold:300000}")
-    private long freeShippingThreshold;
 
     @Override
     @Transactional
@@ -321,8 +317,8 @@ public class OrderServiceImpl implements OrderService {
         boolean shipVoucher = false;
 
         if (hasVoucher) {
-            voucher = validateVoucher(request.voucherCode(), user, subtotal);
-            DiscountResult discountResult = calculateVoucherDiscount(voucher, subtotal);
+            voucher = voucherService.validateVoucher(request.voucherCode(), user, subtotal);
+            VoucherService.DiscountPreview discountResult = voucherService.calculateDiscount(voucher, subtotal);
             discount = discountResult.amount();
             shipVoucher = discountResult.shipVoucher();
         } else if (pointsToRedeem > 0) {
@@ -334,7 +330,7 @@ public class OrderServiceImpl implements OrderService {
         }
 
         long discountedSubtotal = Math.max(0, subtotal - discount);
-        long shippingFee = calculateShippingFee(discountedSubtotal, shipVoucher, voucher);
+        long shippingFee = voucherService.calculateShippingFee(discountedSubtotal, shipVoucher, voucher);
         long total = discountedSubtotal + shippingFee;
         return new OrderPricing(voucher, discount, shippingFee, total, pointsToRedeem);
     }
@@ -564,57 +560,6 @@ public class OrderServiceImpl implements OrderService {
         }
     }
 
-    private Voucher validateVoucher(String code, User user, long subtotal) {
-        Voucher voucher = voucherRepository.findByCodeIgnoreCase(code)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid voucher code"));
-        OffsetDateTime now = OffsetDateTime.now();
-        if (Boolean.FALSE.equals(voucher.getActive())) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Voucher is inactive");
-        }
-        if (voucher.getStartsAt() != null && voucher.getStartsAt().isAfter(now)) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Voucher is not yet active");
-        }
-        if (voucher.getEndsAt() != null && voucher.getEndsAt().isBefore(now)) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Voucher has expired");
-        }
-        if (subtotal < voucher.getMinOrder()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Order subtotal below voucher minimum");
-        }
-        long userUsage = voucherRedemptionRepository.countByVoucherAndUser(voucher, user);
-        if (userUsage >= voucher.getPerUserLimit()) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Voucher per-user limit exceeded");
-        }
-        if (voucher.getUsageLimit() != null && voucher.getUsedCount() >= voucher.getUsageLimit()) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Voucher usage limit exceeded");
-        }
-        return voucher;
-    }
-
-    private DiscountResult calculateVoucherDiscount(Voucher voucher, long subtotal) {
-        return switch (voucher.getType()) {
-            case VoucherTypes.FIXED -> new DiscountResult(Math.min(voucher.getValue(), subtotal), false);
-            case VoucherTypes.PERCENT -> {
-                long raw = subtotal * voucher.getValue() / 100L;
-                if (voucher.getMaxDiscount() != null) {
-                    raw = Math.min(raw, voucher.getMaxDiscount());
-                }
-                yield new DiscountResult(Math.min(raw, subtotal), false);
-            }
-            case VoucherTypes.SHIP -> new DiscountResult(0L, true);
-            default -> throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Unsupported voucher type");
-        };
-    }
-
-    private long calculateShippingFee(long discountedSubtotal, boolean shipVoucher, Voucher voucher) {
-        if (discountedSubtotal >= freeShippingThreshold) {
-            return 0L;
-        }
-        if (shipVoucher || (voucher != null && VoucherTypes.SHIP.equals(voucher.getType()))) {
-            return 0L;
-        }
-        return shippingFeeFlat;
-    }
-
     private String buildAddressSnapshot(Address address) {
         try {
             Map<String, Object> snapshot = new HashMap<>();
@@ -640,8 +585,5 @@ public class OrderServiceImpl implements OrderService {
     }
 
     private record OrderPricing(Voucher voucher, long discount, long shippingFee, long total, long pointsToRedeem) {
-    }
-
-    private record DiscountResult(long amount, boolean shipVoucher) {
     }
 }
