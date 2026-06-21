@@ -29,6 +29,8 @@ public interface BookRepository extends JpaRepository<Book, Long>, JpaSpecificat
 
     Optional<Book> findByIdAndActiveTrue(Long id);
 
+    long countByActiveTrue();
+
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("UPDATE Book b SET b.stock = b.stock - :qty WHERE b.id = :id AND b.stock >= :qty")
     int reserveStock(@Param("id") Long id, @Param("qty") int qty);

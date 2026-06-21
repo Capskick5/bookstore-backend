@@ -51,5 +51,6 @@ app:
     base-url: ${APP_RAG_BASE_URL:http://localhost:8000}
     timeout-ms: ${APP_RAG_TIMEOUT_MS:15000}
     enabled: ${APP_RAG_ENABLED:true}
+    reconciliation-cron: ${APP_RAG_RECONCILIATION_CRON:0 0 2 * * ?}
   ai:
     rate-limit-per-minute: ${APP_AI_RATE_LIMIT_PER_MINUTE:20}
