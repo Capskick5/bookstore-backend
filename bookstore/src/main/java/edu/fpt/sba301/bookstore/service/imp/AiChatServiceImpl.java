@@ -6,6 +6,9 @@ import edu.fpt.sba301.bookstore.ai.RagClient;
 import edu.fpt.sba301.bookstore.dto.request.ChatRequest;
 import edu.fpt.sba301.bookstore.dto.response.BookRecommendationResponse;
 import edu.fpt.sba301.bookstore.dto.response.ChatResponse;
+import edu.fpt.sba301.bookstore.dto.response.ConversationResponse;
+import edu.fpt.sba301.bookstore.dto.response.MessageResponse;
+import edu.fpt.sba301.bookstore.dto.response.PageResponse;
 import edu.fpt.sba301.bookstore.dto.response.SourceResponse;
 import edu.fpt.sba301.bookstore.entity.Book;
 import edu.fpt.sba301.bookstore.entity.Conversation;
@@ -16,6 +19,7 @@ import edu.fpt.sba301.bookstore.repository.ConversationRepository;
 import edu.fpt.sba301.bookstore.repository.MessageRepository;
 import edu.fpt.sba301.bookstore.service.AiChatService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -82,6 +86,87 @@ public class AiChatServiceImpl implements AiChatService {
                 answer,
                 sources,
                 recommendations);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public PageResponse<ConversationResponse> listConversations(User user, int page, int size) {
+        Page<ConversationResponse> conversations = conversationRepository
+                .findByUserOrderByCreatedAtDesc(user, PageRequest.of(page, size))
+                .map(c -> new ConversationResponse(c.getId(), c.getTitle(), c.getCreatedAt()));
+        return PageResponse.from(conversations);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public PageResponse<MessageResponse> listMessages(User user, Long conversationId, int page, int size) {
+        Conversation conversation = requireOwnedConversation(user, conversationId);
+        Page<MessageResponse> messages = messageRepository
+                .findByConversationIdOrderByCreatedAtAsc(conversation.getId(), PageRequest.of(page, size))
+                .map(this::mapMessage);
+        return PageResponse.from(messages);
+    }
+
+    @Override
+    @Transactional
+    public void deleteConversation(User user, Long conversationId) {
+        Conversation conversation = requireOwnedConversation(user, conversationId);
+        conversationRepository.delete(conversation);
+    }
+
+    private Conversation requireOwnedConversation(User user, Long conversationId) {
+        return conversationRepository.findById(conversationId)
+                .filter(c -> c.getUser().getId().equals(user.getId()))
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Conversation not found"));
+    }
+
+    private MessageResponse mapMessage(Message message) {
+        return new MessageResponse(
+                message.getId(),
+                message.getRole(),
+                message.getContent(),
+                extractSources(message.getSourcesJson()),
+                message.getCreatedAt());
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<SourceResponse> extractSources(Map<String, Object> sourcesJson) {
+        if (sourcesJson == null || !sourcesJson.containsKey("sources")) {
+            return List.of();
+        }
+        Object raw = sourcesJson.get("sources");
+        if (!(raw instanceof List<?> list)) {
+            return List.of();
+        }
+        List<SourceResponse> sources = new ArrayList<>();
+        for (Object item : list) {
+            if (item instanceof Map<?, ?> map) {
+                sources.add(new SourceResponse(
+                        stringValue(map.get("title")),
+                        stringValue(map.get("documentName")),
+                        intValue(map.get("page")),
+                        doubleValue(map.get("score"))));
+            }
+        }
+        return sources;
+    }
+
+    private String stringValue(Object value) {
+        return value != null ? value.toString() : null;
+    }
+
+    private Integer intValue(Object value) {
+        if (value instanceof Number number) {
+            return number.intValue();
+        }
+        return null;
+    }
+
+    private Double doubleValue(Object value) {
+        if (value instanceof Number number) {
+            return number.doubleValue();
+        }
+        return null;
     }
 
     private Conversation resolveConversation(User user, Long conversationId, String firstMessage) {
