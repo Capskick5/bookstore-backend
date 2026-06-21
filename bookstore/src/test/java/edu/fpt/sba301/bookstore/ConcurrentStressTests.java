@@ -91,6 +91,7 @@ class ConcurrentStressTests {
         bookId = book.getId();
         book.setPrice(350_000L);
         book.setOriginalPrice(400_000L);
+        book.setStock(50);
         book.setActive(true);
         bookRepository.save(book);
     }

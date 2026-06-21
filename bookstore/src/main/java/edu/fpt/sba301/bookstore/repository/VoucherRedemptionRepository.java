@@ -17,6 +17,8 @@ public interface VoucherRedemptionRepository extends JpaRepository<VoucherRedemp
 
     long countByVoucherAndUser(Voucher voucher, User user);
 
+    long countByVoucher(Voucher voucher);
+
     @Modifying
     @Transactional
     void deleteByVoucherAndUser(Voucher voucher, User user);

@@ -126,8 +126,11 @@ class CartOrderTests {
         cartService.clearCart(customer);
 
         for (String code : List.of("SAVE50K", "PERCENT10", "FREESHIP")) {
-            voucherRepository.findByCodeIgnoreCase(code).ifPresent(voucher ->
-                    voucherRedemptionRepository.deleteByVoucherAndUser(voucher, customer));
+            voucherRepository.findByCodeIgnoreCase(code).ifPresent(voucher -> {
+                voucherRedemptionRepository.deleteByVoucherAndUser(voucher, customer);
+                voucher.setUsedCount((int) voucherRedemptionRepository.countByVoucher(voucher));
+                voucherRepository.save(voucher);
+            });
         }
 
         customerToken = login("test@example.com", "password123", null);
