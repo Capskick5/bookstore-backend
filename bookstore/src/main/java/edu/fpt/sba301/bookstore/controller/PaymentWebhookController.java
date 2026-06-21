@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -49,11 +50,21 @@ public class PaymentWebhookController {
             Object body) {
         PaymentService paymentService = paymentServiceFactory.getService(provider);
         WebhookResult result = paymentService.verifyWebhook(params, body);
-        OrderResponse order = orderService.handlePaymentWebhook(provider, result);
-        log.info("Payment webhook provider={} orderId={} success={}", provider, result.orderId(), result.success());
-        return ResponseEntity.ok(ApiResponseSupport.envelope(
-                result.success() ? 200 : 400,
-                result.message(),
-                order));
+        try {
+            OrderResponse order = orderService.handlePaymentWebhook(provider, result);
+            log.info("Payment webhook provider={} orderId={} success={}", provider, result.orderId(), result.success());
+            return ResponseEntity.ok(ApiResponseSupport.envelope(
+                    result.success() ? 200 : 400,
+                    result.message(),
+                    order));
+        } catch (ResponseStatusException ex) {
+            // PayOS kiểm tra Webhook URL cần HTTP 2xx; luôn trả 200, lỗi nằm trong body.
+            log.warn("Payment webhook provider={} orderId={} httpStatus={} reason={}",
+                    provider, result.orderId(), ex.getStatusCode().value(), ex.getReason());
+            return ResponseEntity.ok(ApiResponseSupport.envelope(
+                    ex.getStatusCode().value(),
+                    ex.getReason(),
+                    null));
+        }
     }
 }

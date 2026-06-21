@@ -16,6 +16,7 @@ import edu.fpt.sba301.bookstore.repository.CartItemRepository;
 import edu.fpt.sba301.bookstore.repository.CartRepository;
 import edu.fpt.sba301.bookstore.repository.OrderRepository;
 import edu.fpt.sba301.bookstore.repository.UserRepository;
+import edu.fpt.sba301.bookstore.repository.VoucherRedemptionRepository;
 import edu.fpt.sba301.bookstore.repository.VoucherRepository;
 import edu.fpt.sba301.bookstore.service.CartService;
 import edu.fpt.sba301.bookstore.service.OrderService;
@@ -80,6 +81,9 @@ class CartOrderTests {
     @Autowired
     private VoucherRepository voucherRepository;
 
+    @Autowired
+    private VoucherRedemptionRepository voucherRedemptionRepository;
+
     private String customerToken;
     private Long bookId;
     private Long addressId;
@@ -102,6 +106,11 @@ class CartOrderTests {
                 .forEach(order -> orderService.cancelOrder(customer, order.getId()));
 
         cartService.clearCart(customer);
+
+        for (String code : List.of("SAVE50K", "PERCENT10", "FREESHIP")) {
+            voucherRepository.findByCodeIgnoreCase(code).ifPresent(voucher ->
+                    voucherRedemptionRepository.deleteByVoucherAndUser(voucher, customer));
+        }
 
         customerToken = login("test@example.com", "password123", null);
     }
